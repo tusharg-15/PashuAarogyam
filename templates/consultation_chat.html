@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation Chat - PashuAarogyam</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #2E8B57, #3CB371);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .consultation-info h2 {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        .consultation-info p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .consultation-status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .consultation-header {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .consultation-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .detail-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #2E8B57;
+        }
+
+        .detail-group h4 {
+            font-size: 14px;
+            color: #2E8B57;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .detail-group p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.consultant {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .message.farmer .message-avatar {
+            background: linear-gradient(135deg, #4caf50, #81c784);
+        }
+
+        .message.consultant .message-avatar {
+            background: linear-gradient(135deg, #2E8B57, #3CB371);
+        }
+
+        .message-content {
+            max-width: 70%;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.consultant .message-content {
+            background: linear-gradient(135deg, #2E8B57, #3CB371);
+            color: white;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .message.consultant .message-sender {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .message.consultant .message-time {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .message-input-container {
+            background: white;
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .message-input-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message-input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .message-input {
+            flex: 1;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            padding: 12px 20px;
+            font-size: 14px;
+            resize: none;
+            max-height: 100px;
+            min-height: 45px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #2E8B57;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #2E8B57, #3CB371);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(46, 139, 87, 0.3);
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .file-attachment-btn {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s;
+            margin-right: 8px;
+        }
+
+        .file-attachment-btn:hover {
+            background: #f0f0f0;
+            color: #2E8B57;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-preview {
+            display: none;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .file-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-preview-icon {
+            font-size: 20px;
+        }
+
+        .file-preview-info {
+            flex: 1;
+        }
+
+        .file-preview-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .file-preview-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .file-remove-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .message-file {
+            margin-top: 8px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .message.consultant .message-file {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-icon {
+            font-size: 24px;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .file-size {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .file-download-btn {
+            background: #2E8B57;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .file-download-btn:hover {
+            background: #1e5d3a;
+        }
+
+        .message.consultant .file-download-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .message.consultant .file-download-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .no-messages {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-messages-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .loading-messages {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2E8B57;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 20px;
+            color: #666;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+            }
+
+            .consultation-info h2 {
+                font-size: 16px;
+            }
+
+            .consultation-details {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .messages-container {
+                padding: 15px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .consultation-header {
+                padding: 15px;
+            }
+
+            .message-input-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body data-is-farmer="{% if is_farmer %}true{% else %}false{% endif %}">
+    <div class="navbar">
+        <div class="navbar-left">
+            <button class="back-btn" onclick="goBack()">← Back</button>
+            <div class="consultation-info">
+                <h2 id="consultationTitle">Loading...</h2>
+                <p id="consultationSubtitle">Loading consultation details...</p>
+            </div>
+        </div>
+        <div class="consultation-status" id="consultationStatus">In Progress</div>
+    </div>
+
+    <div class="chat-container">
+        <div class="consultation-header" id="consultationHeader">
+            <div class="loading-messages">
+                <div class="spinner"></div>
+                <p>Loading consultation details...</p>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+            <div class="loading-messages">
+                <div class="spinner"></div>
+                <p>Loading messages...</p>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            Farmer is typing...
+        </div>
+
+        <div class="message-input-container">
+            <form class="message-input-form" id="messageForm">
+                <div class="file-preview" id="filePreview">
+                    <div class="file-preview-item" id="filePreviewItem">
+                        <span class="file-preview-icon" id="filePreviewIcon">📄</span>
+                        <div class="file-preview-info">
+                            <div class="file-preview-name" id="filePreviewName"></div>
+                            <div class="file-preview-size" id="filePreviewSize"></div>
+                        </div>
+                        <button type="button" class="file-remove-btn" id="fileRemoveBtn" onclick="removeFile()">×</button>
+                    </div>
+                </div>
+                <div class="message-input-row">
+                    <button type="button" class="file-attachment-btn" id="fileAttachBtn" onclick="document.getElementById('fileInput').click()">
+                        📎
+                    </button>
+                    <input type="file" id="fileInput" class="file-input" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx" onchange="handleFileSelect(event)">
+                    <textarea 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Type your response to the farmer..."
+                        rows="1"
+                    ></textarea>
+                    <button type="submit" class="send-btn" id="sendBtn">
+                        ➤
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let consultationId = '{{ consultation.id }}' || '{{ consultation._id }}';
+        let userType = document.body.getAttribute('data-is-farmer') === 'true' ? 'farmer' : 'consultant';
+        let messages = [];
+        let pollingInterval;
+        let selectedFile = null;
+        
+        console.log('🔍 DEBUG: Initial consultation ID:', consultationId);
+        console.log('🔍 DEBUG: User type:', userType);
+
+        // File handling functions
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Check file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size too large. Please select a file smaller than 10MB.');
+                return;
+            }
+
+            // Check file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('File type not supported. Please select an image, PDF, or Word document.');
+                return;
+            }
+
+            selectedFile = file;
+            showFilePreview(file);
+        }
+
+        function showFilePreview(file) {
+            const preview = document.getElementById('filePreview');
+            const icon = document.getElementById('filePreviewIcon');
+            const name = document.getElementById('filePreviewName');
+            const size = document.getElementById('filePreviewSize');
+
+            // Set appropriate icon based on file type
+            if (file.type.startsWith('image/')) {
+                icon.textContent = '🖼️';
+            } else if (file.type === 'application/pdf') {
+                icon.textContent = '📄';
+            } else {
+                icon.textContent = '📝';
+            }
+
+            name.textContent = file.name;
+            size.textContent = formatFileSize(file.size);
+            preview.style.display = 'block';
+        }
+
+        function removeFile() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreview').style.display = 'none';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getFileIcon(filename, mimeType) {
+            if (mimeType && mimeType.startsWith('image/')) {
+                return '🖼️';
+            } else if (filename.endsWith('.pdf') || mimeType === 'application/pdf') {
+                return '📄';
+            } else if (filename.endsWith('.doc') || filename.endsWith('.docx') || mimeType.includes('word')) {
+                return '📝';
+            } else {
+                return '📎';
+            }
+        }
+        
+        // Fallback - extract from URL if consultation ID is empty
+        if (!consultationId || consultationId === '') {
+            const pathParts = window.location.pathname.split('/');
+            const chatIndex = pathParts.indexOf('consultation-chat');
+            if (chatIndex >= 0 && pathParts[chatIndex + 1]) {
+                consultationId = pathParts[chatIndex + 1];
+                console.log('🔍 DEBUG: Extracted consultation ID from URL:', consultationId);
+            }
+        }
+        console.log('🔍 DEBUG: User type:', userType);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 DEBUG: DOM loaded, initializing chat...');
+            checkSession();
+            loadConsultationDetails();
+            loadMessages();
+            setupMessageInput();
+            startPolling();
+        });
+
+        async function checkSession() {
+            try {
+                console.log('🔍 DEBUG: Checking session status...');
+                const response = await fetch('/api/session-check');
+                const data = await response.json();
+                console.log('🔍 DEBUG: Session check result:', data);
+                
+                if (!data.session_info.has_consultant_id && !data.session_info.has_user_id) {
+                    console.error('❌ DEBUG: No valid session found!');
+                    showError('Session expired. Please login again.');
+                }
+            } catch (error) {
+                console.error('❌ ERROR checking session:', error);
+            }
+        }
+
+        async function loadConsultationDetails() {
+            console.log('🔍 DEBUG: Starting loadConsultationDetails for ID:', consultationId);
+            
+            if (!consultationId) {
+                console.error('❌ DEBUG: No consultation ID available');
+                showError('No consultation ID provided');
+                return;
+            }
+            
+            try {
+                const url = `/api/consultation-requests/${consultationId}`;
+                console.log('🔍 DEBUG: Fetching consultation details from:', url);
+                
+                const response = await fetch(url);
+                console.log('🔍 DEBUG: Response status:', response.status);
+                console.log('🔍 DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ DEBUG: Response not OK:', response.status, errorText);
+                    
+                    // Try to parse as JSON first
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                        console.error('❌ DEBUG: Error data:', errorData);
+                    } catch (parseError) {
+                        console.error('❌ DEBUG: Could not parse error response as JSON:', parseError);
+                        errorData = { message: errorText };
+                    }
+                    
+                    // Show more specific error message
+                    if (response.status === 401) {
+                        showError('Authentication failed. Please refresh the page and try again.');
+                    } else if (response.status === 403) {
+                        showError('Access denied. You do not have permission to view this consultation.');
+                    } else if (response.status === 404) {
+                        showError('Consultation not found.');
+                    } else {
+                        showError(`Server error (${response.status}): ${errorData.message || 'Unknown error'}`);
+                    }
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('🔍 DEBUG: Response data:', data);
+
+                if (data.success) {
+                    console.log('✅ DEBUG: Successfully loaded consultation details');
+                    displayConsultationDetails(data.consultation);
+                } else {
+                    console.error('❌ DEBUG: API returned error:', data.message);
+                    showError('Failed to load consultation details: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('❌ ERROR loading consultation details:', error);
+                console.error('❌ ERROR message:', error.message);
+                console.error('❌ ERROR stack:', error.stack);
+                showError('Network error while loading consultation details. Please check your connection and try again.');
+            }
+        }
+
+        function displayConsultationDetails(consultation) {
+            document.getElementById('consultationTitle').textContent = 
+                `${consultation.farmer_name} - ${consultation.animal_type}`;
+            document.getElementById('consultationSubtitle').textContent = 
+                `${consultation.farm_name} • Created ${formatDate(consultation.created_at)}`;
+            document.getElementById('consultationStatus').textContent = consultation.status;
+
+            const headerHtml = `
+                <h3>Consultation Details</h3>
+                <div class="consultation-details">
+                    <div class="detail-group">
+                        <h4>Farmer Information</h4>
+                        <p><strong>Name:</strong> ${consultation.farmer_name}</p>
+                        <p><strong>Farm:</strong> ${consultation.farm_name}</p>
+                        <p><strong>Phone:</strong> ${consultation.contact_phone || 'Not provided'}</p>
+                        ${consultation.location ? `<p><strong>Location:</strong> ${consultation.location}</p>` : ''}
+                    </div>
+                    <div class="detail-group">
+                        <h4>Animal Details</h4>
+                        <p><strong>Type:</strong> ${consultation.animal_type}</p>
+                        ${consultation.animal_breed ? `<p><strong>Breed:</strong> ${consultation.animal_breed}</p>` : ''}
+                        ${consultation.animal_age ? `<p><strong>Age:</strong> ${consultation.animal_age}</p>` : ''}
+                        <p><strong>Urgency:</strong> ${consultation.urgency || 'Medium'}</p>
+                    </div>
+                    <div class="detail-group">
+                        <h4>Symptoms</h4>
+                        <p>${consultation.symptoms}</p>
+                        ${consultation.duration ? `<p><strong>Duration:</strong> ${consultation.duration}</p>` : ''}
+                    </div>
+                    ${consultation.additional_notes ? `
+                    <div class="detail-group">
+                        <h4>Additional Notes</h4>
+                        <p>${consultation.additional_notes}</p>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            document.getElementById('consultationHeader').innerHTML = headerHtml;
+        }
+
+        async function loadMessages() {
+            console.log('🔍 DEBUG: Loading messages for consultation:', consultationId);
+            
+            try {
+                const response = await fetch(`/api/consultation/${consultationId}/messages`);
+                console.log('🔍 DEBUG: Messages response status:', response.status);
+                
+                const data = await response.json();
+                console.log('🔍 DEBUG: Messages response data:', data);
+
+                if (data.success) {
+                    console.log('✅ DEBUG: Successfully loaded', data.messages.length, 'messages');
+                    messages = data.messages;
+                    displayMessages();
+                } else {
+                    console.error('❌ DEBUG: Failed to load messages:', data.message);
+                    showError('Failed to load messages: ' + data.message);
+                }
+            } catch (error) {
+                console.error('❌ ERROR loading messages:', error);
+                console.error('❌ ERROR details:', error.message);
+                showError('Network error while loading messages: ' + error.message);
+            }
+        }
+
+        function displayMessages() {
+            const container = document.getElementById('messagesContainer');
+
+            if (messages.length === 0) {
+                const isConsultant = userType === 'consultant';
+                const isFarmer = userType === 'farmer';
+                let recipientText = 'other party';
+                
+                if (isConsultant) {
+                    recipientText = 'farmer';
+                } else if (isFarmer) {
+                    recipientText = 'consultant';
+                }
+                
+                container.innerHTML = `
+                    <div class="no-messages">
+                        <div class="no-messages-icon">💬</div>
+                        <h3>No messages yet</h3>
+                        <p>Start the conversation by sending a message to the ${recipientText}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const messagesHtml = messages.map(msg => {
+                let fileHtml = '';
+                if (msg.file_info) {
+                    const fileIcon = getFileIcon(msg.file_info.filename, msg.file_info.content_type);
+                    fileHtml = `
+                        <div class="message-file">
+                            <div class="file-info">
+                                <span class="file-icon">${fileIcon}</span>
+                                <div class="file-details">
+                                    <div class="file-name">${msg.file_info.filename}</div>
+                                    <div class="file-size">${formatFileSize(msg.file_info.size)}</div>
+                                </div>
+                                <a href="/api/consultation/${consultationId}/download/${msg.file_info.file_id}" 
+                                   class="file-download-btn" target="_blank">Download</a>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="message ${msg.sender_type}">
+                        <div class="message-avatar">
+                            ${msg.sender_type === 'farmer' ? '🌾' : '👨‍⚕️'}
+                        </div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-sender">${msg.sender_name}</span>
+                                <span class="message-time">${formatTime(msg.timestamp)}</span>
+                            </div>
+                            ${msg.message ? `<div class="message-text">${msg.message}</div>` : ''}
+                            ${fileHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = messagesHtml;
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function setupMessageInput() {
+            const messageInput = document.getElementById('messageInput');
+            const messageForm = document.getElementById('messageForm');
+            
+            // Update placeholder based on user type
+            const isConsultant = userType === 'consultant';
+            const isFarmer = userType === 'farmer';
+            
+            if (isConsultant) {
+                messageInput.placeholder = 'Type your message to the farmer...';
+            } else if (isFarmer) {
+                messageInput.placeholder = 'Type your message to the consultant...';
+            } else {
+                messageInput.placeholder = 'Type your message...';
+            }
+            
+            console.log('🔍 DEBUG: Set placeholder for', userType);
+
+            // Auto-resize textarea
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            });
+
+            // Send message on form submit
+            messageForm.addEventListener('submit', sendMessage);
+
+            // Send message on Ctrl+Enter
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    sendMessage(e);
+                }
+            });
+        }
+
+        async function sendMessage(e) {
+            e.preventDefault();
+            
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = messageInput.value.trim();
+
+            console.log('🔍 DEBUG: Attempting to send message:', message);
+            console.log('🔍 DEBUG: Selected file:', selectedFile);
+
+            // Check if we have either a message or a file
+            if (!message && !selectedFile) {
+                console.log('❌ DEBUG: No message or file, not sending');
+                return;
+            }
+
+            // Disable input while sending
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '⏳';
+
+            try {
+                let response;
+                
+                if (selectedFile) {
+                    // Send file
+                    console.log('🔍 DEBUG: Sending file:', selectedFile.name);
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+                    if (message) {
+                        formData.append('message', message);
+                    }
+                    
+                    response = await fetch(`/api/consultation/${consultationId}/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    // Send text message only
+                    console.log('🔍 DEBUG: Sending text message to:', `/api/consultation/${consultationId}/messages`);
+                    console.log('🔍 DEBUG: Request body:', JSON.stringify({ message }));
+                    
+                    response = await fetch(`/api/consultation/${consultationId}/messages`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message })
+                    });
+                }
+
+                console.log('🔍 DEBUG: Response status:', response.status);
+
+                const data = await response.json();
+                console.log('🔍 DEBUG: Response data:', data);
+
+                if (data.success) {
+                    console.log('✅ DEBUG: Message/file sent successfully');
+                    // Clear input
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+                    
+                    // Remove file preview
+                    if (selectedFile) {
+                        removeFile();
+                    }
+                    
+                    // Add message to display immediately
+                    messages.push(data.message);
+                    displayMessages();
+                    console.log('✅ DEBUG: Message added to display');
+                } else {
+                    console.error('❌ DEBUG: Server returned error:', data.message);
+                    showError(data.message || 'Failed to send message');
+                }
+            } catch (error) {
+                console.error('❌ ERROR sending message:', error);
+                console.error('❌ ERROR details:', error.message);
+                showError('Network error while sending message: ' + error.message);
+            } finally {
+                // Re-enable input
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '➤';
+                messageInput.focus();
+            }
+        }
+
+        function startPolling() {
+            // Poll for new messages every 5 seconds
+            pollingInterval = setInterval(loadMessages, 5000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+        }
+
+        function goBack() {
+            stopPolling();
+            window.history.back();
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown date';
+            
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString() + ' at ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        function formatTime(dateString) {
+            if (!dateString) return '';
+            
+            try {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = now - date;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                
+                if (days === 0) {
+                    return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                } else if (days === 1) {
+                    return 'Yesterday ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    return date.toLocaleDateString();
+                }
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        function showError(message) {
+            console.error('❌ Showing error to user:', message);
+            
+            // Create or update error notification
+            let errorDiv = document.getElementById('errorNotification');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.id = 'errorNotification';
+                errorDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #ff4444;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    max-width: 400px;
+                    z-index: 10000;
+                    font-weight: 600;
+                `;
+                document.body.appendChild(errorDiv);
+            }
+            
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (errorDiv) {
+                    errorDiv.style.display = 'none';
+                }
+            }, 5000);
+        }
+
+        // Cleanup polling when page is unloaded
+        window.addEventListener('beforeunload', stopPolling);
+    </script>
+</body>
+</html>
+</html>
+
+<!-- Google Translate widget (languages: English, Hindi, Marathi) -->
+<div id="google_translate_element"></div>
+<script src="{{ url_for('static', filename='js/translate.js') }}"></script>
