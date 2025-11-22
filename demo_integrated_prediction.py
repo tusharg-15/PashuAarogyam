@@ -11,7 +11,7 @@ import os
 def test_integrated_prediction():
     """Test the new integrated prediction feature"""
     
-    print("🔬 PashuAarogyam - Integrated Disease Prediction Demo")
+    print("🔬 PashuArogyam - Integrated Disease Prediction Demo")
     print("=" * 60)
     print("Testing the new feature that combines image analysis with symptom assessment")
     print("for more accurate disease predictions.\n")

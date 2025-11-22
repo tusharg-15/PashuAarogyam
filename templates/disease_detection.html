@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disease Detection - PashuAarogyam</title>
+    <title>Disease Detection - PashuArogyam</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/disease-detection.css') }}">
@@ -13,7 +13,7 @@
     <!-- Header -->
     <header class="header">
         <nav class="nav-container">
-            <div class="logo">PashuAarogyam</div>
+            <div class="logo">PashuArogyam</div>
             <ul class="nav-menu">
                 <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
                 <li><a href="{{ url_for('dashboard') }}#features">Features</a></li>
@@ -95,11 +95,13 @@
                     </div>
                 </div>
 
-                <div class="animal-card coming-soon">
+                <div class="animal-card" onclick="selectAnimal('sheep')">
                     <div class="animal-icon">🐑</div>
                     <h3>Sheep</h3>
-                    <p>Advanced detection for sheep health conditions</p>
-                    <div class="coming-soon-badge">Coming Soon</div>
+                    <p>Detect sheep scab, ovine johnes, flystrike and health assessment</p>
+                    <div class="model-info">
+                        <span class="model-tag">YOLOv8 Model</span>
+                    </div>
                 </div>
 
                 <div class="animal-card coming-soon">
@@ -128,12 +130,12 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <div class="footer-logo">PashuAarogyam</div>
+                    <div class="footer-logo">PashuArogyam</div>
                     <p>Revolutionizing animal healthcare with artificial intelligence.</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 PashuAarogyam. All rights reserved.</p>
+                <p>&copy; 2025 PashuArogyam. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -161,6 +163,8 @@
                 window.location.href = "{{ url_for('cow_detection') }}";
             } else if (animal === 'dog') {
                 window.location.href = "{{ url_for('dog_detection') }}";
+            } else if (animal === 'sheep') {
+                window.location.href = "{{ url_for('sheep_detection') }}";
             }
         }
     </script>

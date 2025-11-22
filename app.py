@@ -19,10 +19,10 @@ try:
     from reportlab.graphics.charts.piecharts import Pie
     from reportlab.graphics.charts.linecharts import HorizontalLineChart
     REPORTLAB_AVAILABLE = True
-    print("✅ ReportLab import successful!")
+    print(" ReportLab import successful!")
 except ImportError as e:
-    print(f"⚠️  ReportLab import failed: {e}")
-    print("⚠️  PDF export functionality will be disabled.")
+    print(f"  ReportLab import failed: {e}")
+    print("  PDF export functionality will be disabled.")
     REPORTLAB_AVAILABLE = False
 
 load_dotenv()
@@ -31,35 +31,45 @@ load_dotenv()
 try:
     import google.generativeai as genai
     GEMINI_AVAILABLE = True
-    print("✅ Google Generative AI import successful!")
+    print(" Google Generative AI import successful!")
 except ImportError as e:
-    print(f"⚠️  Google Generative AI import failed: {e}")
+    print(f"  Google Generative AI import failed: {e}")
     GEMINI_AVAILABLE = False
 
-# Configure Gemini API with new working key
-GEMINI_API_KEY_DISEASE = "AIzaSyDRXXiS-8KWyADGm18IW16Iy3w2sbDmdbg"  # New working API key
-GEMINI_API_KEY_CHATBOT = "AIzaSyDRXXiS-8KWyADGm18IW16Iy3w2sbDmdbg"  # Same key for both services
 
-# Re-enable Gemini with dual API system
-if GEMINI_AVAILABLE:
+GEMINI_API_KEY_DISEASE = os.getenv('GEMINI_API_KEY_DISEASE', 'AIzaSyAFCWyI8QzWK05YRsV0JZmkGKIeZNFHzas')
+GEMINI_API_KEY_CHATBOT = os.getenv('GEMINI_API_KEY_CHATBOT', 'AIzaSyAFCWyI8QzWK05YRsV0JZmkGKIeZNFHzas')
+
+if not GEMINI_API_KEY_DISEASE:
+    print("  GEMINI_API_KEY_DISEASE not found in environment variables")
+    print("  Disease detection functionality may not work properly")
+if not GEMINI_API_KEY_CHATBOT:
+    print("  GEMINI_API_KEY_CHATBOT not found in environment variables")  
+    print("  Chatbot functionality may not work properly")
+if GEMINI_AVAILABLE and GEMINI_API_KEY_DISEASE:
     try:
-        # Configure with the disease detection API key as primary
-        genai.configure(api_key=GEMINI_API_KEY_DISEASE)
-        print("✅ Gemini AI configured successfully with dual API keys!")
-        print("   🔑 Disease Detection API: ..."+GEMINI_API_KEY_DISEASE[-10:])
-        print("   🔑 Chatbot API: ..."+GEMINI_API_KEY_CHATBOT[-10:])
+        # Don't configure globally here since chatbot service will configure it separately
+        # genai.configure(api_key=GEMINI_API_KEY_DISEASE)
+        print(" Gemini AI library available!")
+        print(" Disease Detection API: Configured")
+        if GEMINI_API_KEY_CHATBOT:
+            print("   Chatbot API: Configured")
+        else:
+            print("   Chatbot API key not configured")
     except Exception as e:
-        print(f"⚠️  Gemini AI configuration failed: {e}")
+        print(f"  Gemini AI configuration failed: {e}")
         GEMINI_AVAILABLE = False
+elif GEMINI_AVAILABLE:
+    print("  Gemini AI available but API keys not configured")
+    GEMINI_AVAILABLE = False
 
-# Try to import MongoDB with error handling
 try:
     from pymongo import MongoClient
     MONGODB_AVAILABLE = True
-    print("✅ MongoDB import successful!")
+    print("MongoDB import successful!")
 except ImportError as e:
-    print(f"⚠️  MongoDB import failed: {e}")
-    print("⚠️  MongoDB functionality will be disabled.")
+    print(f"MongoDB import failed: {e}")
+    print("MongoDB functionality will be disabled.")
     MongoClient = None
     MONGODB_AVAILABLE = False
 
@@ -74,14 +84,14 @@ import io
 import numpy as np
 import base64
 
-# Try to import chatbot service with error handling
+
 try:
     from chatbot_service_new import AnimalDiseaseChatbot
     CHATBOT_AVAILABLE = True
-    print("✅ Chatbot service import successful!")
+    print("Chatbot service import successful!")
 except ImportError as e:
-    print(f"⚠️  Chatbot service import failed: {e}")
-    print("⚠️  Chatbot functionality will be disabled.")
+    print(f"Chatbot service import failed: {e}")
+    print("Chatbot functionality will be disabled.")
     AnimalDiseaseChatbot = None
     CHATBOT_AVAILABLE = False
 
@@ -105,10 +115,10 @@ def initialize_mongodb():
     global client, db, users_collection, predictions_collection, consultants_collection, consultation_requests_collection, messages_collection
     
     if not MONGODB_AVAILABLE:
-        print("⚠️  MongoDB not available - skipping database initialization")
+        print("MongoDB not available - skipping database initialization")
         return False
     
-    print("🔄 Initializing MongoDB connection...")
+    print("Initializing MongoDB connection...")
     
     try:
         # Create MongoDB client with proper configuration
@@ -123,7 +133,7 @@ def initialize_mongodb():
         
         # Test the connection by pinging the admin database
         client.admin.command('ping')
-        print("✅ MongoDB ping successful!")
+        print("MongoDB ping successful!")
         
         # Initialize database and collections  
         db = client['gorakshaai']
@@ -133,7 +143,7 @@ def initialize_mongodb():
         consultation_requests_collection = db['consultation_requests']
         messages_collection = db['messages']
         
-        print(f"✅ Collections initialized:")
+        print(f"Collections initialized:")
         print(f"   - users_collection: {users_collection is not None}")
         print(f"   - consultants_collection: {consultants_collection is not None}")
         print(f"   - consultation_requests_collection: {consultation_requests_collection is not None}")
@@ -151,24 +161,24 @@ def initialize_mongodb():
             consultation_requests_collection.create_index("created_at")
             messages_collection.create_index("consultation_id")
             messages_collection.create_index("created_at")
-            print("✅ Database indexes created successfully!")
+            print("Database indexes created successfully!")
         except Exception as idx_error:
-            print(f"⚠️  Index creation warning: {str(idx_error)}")
+            print(f"Index creation warning: {str(idx_error)}")
         
         # Initialize sample data
         initialize_sample_data()
         
         # Test collections access
         user_count = users_collection.count_documents({})
-        print(f"✅ Users collection accessible. Current user count: {user_count}")
+        print(f"Users collection accessible. Current user count: {user_count}")
         
-        print("✅ MongoDB connected successfully!")
+        print("MongoDB connected successfully!")
         return True
         
     except Exception as e:
-        print(f"❌ MongoDB connection failed: {str(e)}")
-        print(f"❌ Error type: {type(e).__name__}")
-        print("⚠️  Starting without database - authentication will not work")
+        print(f"MongoDB connection failed: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        print("Starting without database - authentication will not work")
         
         # Set globals to None on failure
         client = None
@@ -180,19 +190,37 @@ def initialize_mongodb():
         messages_collection = None
         return False
 
-# Enhanced Rate limiting for Gemini API with quota management
+
 class GeminiRateLimiter:
     def __init__(self):
         self.last_call_time = 0
-        self.min_interval = 1.0  # More reasonable 1 second between calls with fresh key
+        self.min_interval = 0.5  # Reduced to 0.5 seconds for better performance
         self.rate_limit_until = 0  # Timestamp until when we're rate limited
         self.consecutive_failures = 0
         self.quota_exceeded = False  # Track if quota is exceeded for the day
         self.quota_reset_time = 0  # When quota should reset (next day)
+        self.daily_calls = 0  # Track daily API calls
+        self.max_daily_calls = 1500  # Conservative daily limit
+        self.last_reset_date = time.strftime('%Y-%m-%d')  # Track when we last reset
         
     def wait_if_needed(self):
         """Wait if we need to respect rate limits"""
         current_time = time.time()
+        current_date = time.strftime('%Y-%m-%d')
+        
+        # Reset daily counter if it's a new day
+        if current_date != self.last_reset_date:
+            self.daily_calls = 0
+            self.last_reset_date = current_date
+            self.quota_exceeded = False
+            self.consecutive_failures = 0
+            print("Daily quota counter reset for new day")
+        
+        # Check daily call limit
+        if self.daily_calls >= self.max_daily_calls:
+            self.quota_exceeded = True
+            print(f"Daily API call limit reached ({self.max_daily_calls}). Please try again tomorrow.")
+            return True
         
         # Check if quota is exceeded and we need to wait until reset
         if self.quota_exceeded and current_time < self.quota_reset_time:
@@ -201,12 +229,12 @@ class GeminiRateLimiter:
             # Reset quota status if it's past reset time
             self.quota_exceeded = False
             self.consecutive_failures = 0
-            print("✅ Daily quota should be reset, attempting to resume API calls...")
+            print("Daily quota should be reset, attempting to resume API calls...")
         
         # Check if we're still in rate limit period
         if current_time < self.rate_limit_until:
             wait_time = self.rate_limit_until - current_time
-            print(f"⏳ Rate limited. Waiting {wait_time:.1f} seconds...")
+            print(f"Rate limited. Waiting {wait_time:.1f} seconds...")
             time.sleep(wait_time)
             return True
             
@@ -217,37 +245,39 @@ class GeminiRateLimiter:
             time.sleep(wait_time)
             
         self.last_call_time = time.time()
+        self.daily_calls += 1  # Increment daily call counter
         return False
         
     def handle_rate_limit_error(self, error_message=""):
         """Handle 429 rate limit error with quota detection"""
         self.consecutive_failures += 1
+        error_lower = error_message.lower()
         
         # Check if this is a quota exceeded error
-        if "quota" in error_message.lower() or "50" in error_message:
+        if any(keyword in error_lower for keyword in ["quota", "exceeded", "limit", "50", "resource_exhausted"]):
             self.quota_exceeded = True
             # Set reset time to next day (24 hours from now)
             from datetime import datetime, timedelta
             next_day = datetime.now() + timedelta(days=1)
             self.quota_reset_time = next_day.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-            print(f"🚫 Daily quota exceeded. API calls suspended until {datetime.fromtimestamp(self.quota_reset_time)}")
+            print(f"Daily quota exceeded. API calls suspended until next day.")
             return 24 * 3600  # Return 24 hours in seconds
         
         # Regular rate limiting - more conservative
-        base_wait = min(60, 2.0 ** min(self.consecutive_failures, 4))  # Reduced backoff
-        jitter = random.uniform(0.8, 1.2)
+        base_wait = min(30, 1.5 ** min(self.consecutive_failures, 5))  # More gradual backoff
+        jitter = random.uniform(0.9, 1.1)
         wait_time = base_wait * jitter
         
         self.rate_limit_until = time.time() + wait_time
-        self.min_interval = min(5, self.min_interval * 1.2)  # Gradual increase
+        self.min_interval = min(3, self.min_interval * 1.1)  # Gradual increase
         
-        print(f"⚠️ Rate limit hit. Backing off for {wait_time:.1f} seconds...")
+        print(f"Rate limit hit. Backing off for {wait_time:.1f} seconds...")
         return wait_time
         
     def reset_on_success(self):
         """Reset failure count on successful call"""
         self.consecutive_failures = 0
-        self.min_interval = max(1.0, self.min_interval * 0.9)  # Gradually reduce interval but keep minimum at 1s
+        self.min_interval = max(0.5, self.min_interval * 0.95)  # Gradually reduce interval but keep minimum at 0.5s
         
     def is_quota_exceeded(self):
         """Check if quota is currently exceeded"""
@@ -274,72 +304,56 @@ def call_gemini_with_retry(model_name, prompt, image_parts=None, max_retries=2, 
     if api_key is None:
         api_key = GEMINI_API_KEY_DISEASE
         
+    if not api_key:
+        return None, "API key not configured"
+        
+    # Define fallback models in order of preference
+    models_to_try = [model_name, 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-pro-latest']
+    # Remove duplicates while preserving order
+    models_to_try = list(dict.fromkeys(models_to_try))
+        
     for attempt in range(max_retries):
-        try:
-            # Wait if rate limited or quota exceeded
-            should_skip = gemini_rate_limiter.wait_if_needed()
-            if should_skip and gemini_rate_limiter.is_quota_exceeded():
-                return None, "Daily API quota exceeded. Please try again tomorrow."
-            
-            # Configure with the specific API key for this request
-            genai.configure(api_key=api_key)
-            
-            # Create model and make request
-            model = genai.GenerativeModel(model_name)
-            
-            if image_parts:
-                response = model.generate_content([prompt] + image_parts)
-            else:
-                response = model.generate_content(prompt)
-            
-            if response and response.text:
-                gemini_rate_limiter.reset_on_success()
-                return response.text.strip(), None
-            else:
-                return None, "Empty response from Gemini AI"
+        for current_model in models_to_try:
+            try:
+                # Wait if rate limited or quota exceeded
+                should_skip = gemini_rate_limiter.wait_if_needed()
+                if should_skip and gemini_rate_limiter.is_quota_exceeded():
+                    return None, "Daily API quota exceeded. Please try again tomorrow."
                 
-        except Exception as e:
-            error_str = str(e).lower()
-            
-            # Handle different types of errors
-            if "429" in error_str or "resource exhausted" in error_str or "quota" in error_str:
-                wait_time = gemini_rate_limiter.handle_rate_limit_error(str(e))
+                # Configure with the specific API key for this request
+                genai.configure(api_key=api_key)
                 
-                # If quota exceeded, don't retry - return helpful message
-                if gemini_rate_limiter.is_quota_exceeded():
-                    return None, ("Daily API quota exceeded. The free tier allows 50 requests per day. "
-                                "Please try again tomorrow or consider upgrading your plan for higher limits.")
+                # Create model and make request
+                model = genai.GenerativeModel(current_model)
                 
-                if attempt < max_retries - 1:
-                    print(f"🔄 Retrying after rate limit (attempt {attempt + 1}/{max_retries})...")
-                    time.sleep(min(wait_time, 30))  # Cap wait time for retries
-                    continue
+                if image_parts:
+                    response = model.generate_content([prompt] + image_parts)
                 else:
-                    return None, ("API rate limit exceeded. Please wait a few minutes and try again, "
-                                "or use our offline disease detection features.")
+                    response = model.generate_content(prompt)
+                
+                if response and response.text:
+                    gemini_rate_limiter.reset_on_success()
+                    return response.text.strip(), None
+                else:
+                    continue  # Try next model
                     
-            elif "network" in error_str or "connection" in error_str or "timeout" in error_str:
-                if attempt < max_retries - 1:
-                    wait_time = (attempt + 1) * 2  # Linear backoff for network issues
-                    print(f"🌐 Network error, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})...")
-                    time.sleep(wait_time)
-                    continue
-                else:
-                    return None, "Network error. Please check your connection and try again."
-                    
-            elif "invalid" in error_str or "permission" in error_str:
-                return None, f"API configuration error: {str(e)}"
+            except Exception as model_error:
+                error_str = str(model_error).lower()
                 
-            else:
-                if attempt < max_retries - 1:
-                    wait_time = (attempt + 1) * 1.5
-                    print(f"⚠️ Gemini error, retrying in {wait_time}s: {str(e)[:100]}...")
-                    time.sleep(wait_time)
+                # If quota exceeded, try next model
+                if "429" in error_str or "quota" in error_str:
+                    print(f"  Model {current_model} quota exceeded, trying next model...")
+                    continue
+                # If model not found, try next model
+                elif "404" in error_str or "not found" in error_str:
+                    print(f"  Model {current_model} not available, trying next model...")
                     continue
                 else:
-                    return None, f"Gemini API error: {str(e)}"
+                    # Other errors, break the model loop but continue retries
+                    break
     
-    return None, "Failed after all retry attempts"
+    # If all models and retries failed
+    return None, "All available AI models are currently unavailable. Please try again later."
 
 # Initialize chatbot service
 chatbot = None
@@ -350,44 +364,56 @@ def initialize_chatbot():
     
     try:
         if not CHATBOT_AVAILABLE:
-            print("⚠️  Chatbot service not available - chatbot functionality will be disabled")
+            print("Chatbot service not available - chatbot functionality will be disabled")
             return False
         
         # Use the dedicated chatbot API key
         gemini_api_key = GEMINI_API_KEY_CHATBOT
         
         if not gemini_api_key:
-            print("❌ GEMINI_API_KEY_CHATBOT not configured")
+            print("  GEMINI_API_KEY_CHATBOT not configured - chatbot functionality will be disabled")
             return False
         
-        print("🔄 Initializing chatbot service with dedicated API key...")
+        print("Initializing chatbot service with dedicated API key...")
         chatbot = AnimalDiseaseChatbot(gemini_api_key)
-        print("✅ Chatbot service initialized successfully with chatbot API key!")
         
-        # Test if the model is working - but don't fail initialization if quota exceeded
-        try:
-            is_healthy, health_message = chatbot.test_model_health()
-            if is_healthy:
-                print("✅ Chatbot model health check passed!")
-            else:
-                print(f"⚠️  Chatbot model health check failed: {health_message}")
-                
-                # Check if it's a quota issue
-                if "quota" in health_message.lower() or "429" in health_message:
-                    print("📊 Quota exceeded during health check - this is normal for free tier users")
-                    print("💡 Chatbot will still work when quota resets or when users make requests")
+        # Force clear any existing quota restrictions with new API key
+        if hasattr(chatbot, 'rate_limiter'):
+            chatbot.rate_limiter.clear_quota_exceeded_state()
+            print("  Quota restrictions cleared for new API key")
+        
+        print("  Chatbot service initialized successfully with chatbot API key!")
+        
+
+        run_health_check = os.getenv('RUN_GEMINI_HEALTH_CHECK', 'false').lower() == 'true'
+
+        if run_health_check:
+            try:
+                is_healthy, health_message = chatbot.test_model_health()
+                if is_healthy:
+                    print("Chatbot model health check passed!")
                 else:
-                    print("⚠️  Chatbot may have limited functionality")
-        except Exception as health_error:
-            print(f"⚠️  Health check encountered an error: {health_error}")
-            print("🔄 Chatbot service will still be available for user requests")
+                    print(f"Chatbot model health check failed: {health_message}")
+
+                    # Check if it's a quota issue
+                    if "quota" in health_message.lower() or "429" in health_message:
+                        print("Quota exceeded during health check - this is normal for free tier users")
+                        print("Chatbot will still work when quota resets or when users make requests")
+                    else:
+                        print("Chatbot may have limited functionality")
+            except Exception as health_error:
+                print(f"Health check encountered an error: {health_error}")
+                print("Chatbot service will still be available for user requests")
+        else:
+            print("Skipping Gemini model health check at startup (to avoid daily quota usage).")
+            print("   To enable run-time health checks set RUN_GEMINI_HEALTH_CHECK=true in environment.")
         
         return True
         
     except Exception as e:
-        print(f"❌ Error initializing chatbot: {e}")
-        print(f"❌ Error type: {type(e).__name__}")
-        print("⚠️  Chatbot functionality will be disabled")
+        print(f"Error initializing chatbot: {e}")
+        print(f"Error type: {type(e).__name__}")
+        print("Chatbot functionality will be disabled")
         chatbot = None
         return False
 
@@ -435,11 +461,180 @@ def get_chatbot_status():
     if chatbot is None:
         return False, "Chatbot not initialized"
     
-    # Check quota status
+    # Reset quota if expired (new day) or if we have a new API key
+    if hasattr(chatbot, 'reset_quota_if_expired'):
+        chatbot.reset_quota_if_expired()
+    
+    # With the new API key, clear any false quota exceeded state
+    if hasattr(chatbot, 'rate_limiter'):
+        # Force clear quota state since we have a fresh API key
+        current_time = time.time()
+        # If quota was set more than an hour ago, clear it (in case it's stale)
+        if (hasattr(chatbot.rate_limiter, 'quota_reset_time') and 
+            chatbot.rate_limiter.quota_reset_time > 0 and
+            (current_time - chatbot.rate_limiter.quota_reset_time > 3600)):  # 1 hour
+            chatbot.rate_limiter.clear_quota_exceeded_state()
+            print("  Cleared old quota state for fresh API key usage")
+    
+    # Check quota status - this is not a failure, just quota exceeded
     if hasattr(chatbot, 'rate_limiter') and chatbot.rate_limiter.is_quota_exceeded():
-        return False, "Chatbot quota exceeded"
+        return "quota_exceeded", "Chatbot quota exceeded"
     
     return True, "Chatbot ready"
+
+def get_enhanced_fallback_response(user_input=""):
+    """Enhanced fallback response system with animal-specific guidance"""
+    user_lower = user_input.lower() if user_input else ""
+    
+    # Animal-specific responses
+    if any(word in user_lower for word in ['cow', 'cattle', 'bull', 'calf', 'bovine']):
+        if 'fever' in user_lower:
+            return """🐄 **Cow Fever Management**
+**Normal Temperature**: 101.5-103.5°F (38.6-39.7°C)
+**Action Steps**:
+• Provide shade and cool, fresh water
+• Check for respiratory distress
+• Monitor appetite and milk production
+• Contact vet if fever >104°F or persists >24h
+• Consider electrolyte solutions"""
+        elif 'mastitis' in user_lower:
+            return """🥛 **Mastitis in Cows**
+**Signs**: Hot, swollen udder quarters, abnormal milk
+**Immediate Care**:
+• Frequent milking every 2-3 hours
+• Apply warm compresses before milking
+• Strip affected quarters completely
+• **Veterinary consultation required for antibiotics**
+• Monitor for systemic illness"""
+        elif 'lameness' in user_lower or 'limp' in user_lower:
+            return """🦶 **Cow Lameness Assessment**
+**Common Causes**: Hoof problems, stones, injuries
+**Action Steps**:
+• Examine hooves for cuts/stones
+• Clean and trim if experienced
+• Provide soft, dry bedding
+• Limit movement
+• **Vet needed if no improvement in 24-48h**"""
+    
+    elif any(word in user_lower for word in ['dog', 'puppy', 'canine']):
+        if 'fever' in user_lower:
+            return """🐕 **Dog Fever Care**
+**Normal Temperature**: 101-102.5°F (38.3-39.2°C)
+**Action Steps**:
+• Ensure adequate water intake
+• Cool environment, avoid overheating
+• Monitor for lethargy, loss of appetite
+• **Emergency if fever >104°F**
+• Consider wet towels on paws and belly"""
+        elif 'diarrhea' in user_lower:
+            return """💧 **Dog Diarrhea Treatment**
+**Immediate Care**:
+• Withhold food for 12-24 hours (not water)
+• Bland diet: boiled rice with chicken
+• Small, frequent water offerings
+• **Vet needed if**: Blood, severe dehydration, persists >2 days
+• Watch for signs of bloat"""
+    
+    elif any(word in user_lower for word in ['cat', 'kitten', 'feline']):
+        if 'fever' in user_lower:
+            return """🐱 **Cat Fever Management**
+**Normal Temperature**: 100.5-102.5°F (38.1-39.2°C)
+**Action Steps**:
+• Quiet, cool environment
+• Encourage water intake
+• Monitor breathing and appetite
+• **Emergency if fever >104°F or lethargic**
+• Wet food may help hydration"""
+        elif 'vomit' in user_lower or 'throw up' in user_lower:
+            return """🤢 **Cat Vomiting Care**
+**Immediate Steps**:
+• Withhold food for 12 hours (not water)
+• Small amounts of water frequently
+• **Emergency signs**: Blood, continuous retching, dehydration
+• Return to bland diet gradually
+• **Vet needed if persists >24h**"""
+    
+    elif any(word in user_lower for word in ['sheep', 'lamb', 'ewe', 'ram']):
+        if 'fever' in user_lower:
+            return """🐑 **Sheep Fever Care**
+**Normal Temperature**: 102-104°F (38.9-40°C)
+**Action Steps**:
+• Provide shade and ventilation
+• Fresh water access
+• Check for respiratory issues
+• **Emergency if >105°F or difficulty breathing**
+• Isolate from flock if contagious suspected"""
+        elif 'limp' in user_lower or 'foot rot' in user_lower:
+            return """🦶 **Sheep Foot Problems**
+**Common Issues**: Foot rot, stones, injuries
+**Care Steps**:
+• Examine hooves for lesions/smell
+• Trim overgrown hooves if experienced
+• Clean, dry environment essential
+• **Foot rot requires antibiotic treatment**
+• Zinc supplements may help prevention"""
+    
+    # General responses by symptom
+    if 'emergency' in user_lower or 'urgent' in user_lower:
+        return """🚨 **EMERGENCY SIGNS - Contact Veterinarian IMMEDIATELY**
+• **Breathing difficulties** - Open mouth breathing, gasping
+• **Severe bleeding** - Continuous, won't stop with pressure
+• **Cannot stand or walk** - Paralysis, extreme weakness
+• **High fever** - >104°F (40°C) for most animals
+• **Seizures or convulsions**
+• **Severe pain** - Crying, restlessness, rigid posture
+• **Bloated abdomen** - Especially in ruminants
+• **Eye injuries** - Any trauma to eyes"""
+    
+    elif 'fever' in user_lower:
+        return """🌡️ **General Fever Management**
+**Recognition**: Lethargy, warm nose/ears, shivering
+**Immediate Care**:
+• Cool, quiet environment with good ventilation
+• Fresh water access - encourage drinking
+• Light, easily digestible food
+• Monitor temperature if possible
+• **Call vet if fever >104°F or lasts >24h**"""
+    
+    elif 'diarrhea' in user_lower or 'loose stool' in user_lower:
+        return """💧 **Diarrhea Management**
+**Immediate Steps**:
+• Ensure hydration - offer water/electrolytes frequently
+• Withhold food 12-24h (keep water available)
+• Gradual return to bland diet
+• **Warning signs**: Blood, severe dehydration, fever
+• **Vet needed**: Persists >2 days, animal becomes weak"""
+    
+    # Default comprehensive response with quota message
+    return f"""🩺 **PashuArogyam - Animal Health Guidance** (2025-11-19 {time.strftime('%H:%M:%S')})
+    
+I've reached my daily quota limit. This is normal for free tier usage. Please try again tomorrow, or you can:
+
+• **Use our disease detection features**
+• **Consult with our veterinarians** 
+• **Browse our health resources**
+
+Here's some general guidance:
+
+**🩺 Animal Health Guidance ({time.strftime('%Y-%m-%d %H:%M:%S')})**
+I'm currently unable to provide AI-powered responses, but here's some general guidance:
+
+**Emergency Signs - Contact Veterinarian Immediately:**
+• Difficulty breathing, severe bleeding, unable to stand
+• High fever (>104°F/40°C), seizures, severe pain
+
+**General Care Tips:**
+• Monitor appetite, behavior, and vital signs daily
+• Ensure clean water and appropriate nutrition  
+• Maintain clean, dry living conditions
+• Isolate sick animals to prevent spread
+
+**Common Treatments:**
+• **Fever**: Cool water, shade, electrolytes
+• **Minor cuts**: Clean, disinfect, monitor healing
+• **Digestive issues**: Withhold food briefly, provide water
+
+Always consult a qualified veterinarian for proper diagnosis and treatment."""
 
 def get_db_status():
     """Check if database is connected and available"""
@@ -451,6 +646,7 @@ def get_db_status():
         client.admin.command('ping')
         return True, "Database connected"
     except Exception as e:
+        return False, f"Database error: {str(e)}"
         return False, f"Database error: {str(e)}"
 
 def initialize_sample_data():
@@ -473,7 +669,7 @@ def initialize_sample_data():
                 'updated_at': datetime.now(timezone.utc)
             }
             consultants_collection.insert_one(sample_consultant)
-            print("✅ Sample consultant created: vet@goraksha.ai / password123")
+            print("Sample consultant created: vet@goraksha.ai / password123")
         
         # Check if sample consultation requests exist
         if consultation_requests_collection is not None and consultation_requests_collection.count_documents({}) == 0:
@@ -538,26 +734,26 @@ def initialize_sample_data():
                 }
             ]
             consultation_requests_collection.insert_many(sample_requests)
-            print("✅ Sample consultation requests created")
+            print(" Sample consultation requests created")
         
     except Exception as e:
-        print(f"⚠️  Error initializing sample data: {e}")
+        print(f"  Error initializing sample data: {e}")
 
 # Initialize MongoDB and chatbot on startup
-print("🚀 Starting PashuAarogyam application...")
+print("  Starting PashuArogyam application...")
 db_connected = initialize_mongodb()
 if db_connected:
-    print("🎉 Database connection established!")
+    print(" Database connection established!")
 else:
-    print("⚠️  Application starting without database connection")
+    print("  Application starting without database connection")
 
 chatbot_initialized = initialize_chatbot()
 if chatbot_initialized:
-    print("🤖 Chatbot service is ready!")
+    print("  Chatbot service is ready!")
 else:
-    print("⚠️  Application starting without chatbot functionality")
+    print("  Application starting without chatbot functionality")
 
-# Configuration
+# Configuration - Load from environment variables for security
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -572,26 +768,33 @@ try:
     # Load cat disease detection model
     if os.path.exists('models/cat_disease_best.pt'):
         models['cat'] = YOLO('models/cat_disease_best.pt')
-        print("✅ Cat disease model loaded successfully!")
+        print("  Cat disease model loaded successfully!")
     else:
-        print("⚠️  Cat disease model not found at models/cat_disease_best.pt")
+        print("  Cat disease model not found at models/cat_disease_best.pt")
     
     # Load cow disease detection model  
     if os.path.exists('models/lumpy_disease_best.pt'):
         models['cow'] = YOLO('models/lumpy_disease_best.pt')
-        print("✅ Cow disease model loaded successfully!")
+        print("  Cow disease model loaded successfully!")
     else:
-        print("⚠️  Cow disease model not found at models/lumpy_disease_best.pt")
+        print("  Cow disease model not found at models/lumpy_disease_best.pt")
     
     # Load dog disease detection model
     if os.path.exists('models/dog_disease_best.pt'):
         models['dog'] = YOLO('models/dog_disease_best.pt')
-        print("✅ Dog disease model loaded successfully!")
+        print(" Dog disease model loaded successfully!")
     else:
-        print("⚠️  Dog disease model not found at models/dog_disease_best.pt")
+        print("  Dog disease model not found at models/dog_disease_best.pt")
+    
+    # Load sheep disease detection model
+    if os.path.exists('models/sheep_disease_model.pt'):
+        models['sheep'] = YOLO('models/sheep_disease_model.pt')
+        print(" Sheep disease model loaded successfully!")
+    else:
+        print("  Sheep disease model not found at models/sheep_disease_model.pt")
         
 except Exception as e:
-    print(f"❌ Error loading YOLO models: {e}")
+    print(f" Error loading YOLO models: {e}")
     models = {}
 
 # Treatment and Medicine Database
@@ -1171,6 +1374,128 @@ TREATMENT_DATABASE = {
                 }
             ]
         }
+    },
+    'sheep': {
+        'Sheep Scab': {
+            'description': 'Parasitic skin condition caused by Psoroptes ovis mites causing intense itching',
+            'treatment': 'Acaricidal treatments and isolation of affected animals',
+            'medicines': [
+                {
+                    'name': 'Ivermectin Injectable',
+                    'type': 'Antiparasitic Injection',
+                    'dosage': '200mcg per kg subcutaneously, repeat after 7-14 days',
+                    'image': 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Doramectin (Dectomax)',
+                    'type': 'Injectable Parasiticide',
+                    'dosage': '300mcg per kg intramuscularly',
+                    'image': 'https://images.unsplash.com/photo-1584362917165-526a968579e8?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Organophosphate Dip (Diazinon)',
+                    'type': 'External Parasiticide Dip',
+                    'dosage': 'Total body dip as per label instructions',
+                    'image': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Amitraz Solution',
+                    'type': 'Topical Acaricide',
+                    'dosage': 'Apply as directed, repeat treatment as needed',
+                    'image': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=300&h=200&fit=crop'
+                }
+            ]
+        },
+        'Ovine Johnes': {
+            'description': 'Chronic bacterial infection of the intestines causing weight loss and diarrhea',
+            'treatment': 'Supportive care and management as there is no effective cure',
+            'medicines': [
+                {
+                    'name': 'Probiotics for Ruminants',
+                    'type': 'Digestive Support',
+                    'dosage': 'Daily oral administration as per label',
+                    'image': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'High-Energy Feed Supplement',
+                    'type': 'Nutritional Support',
+                    'dosage': 'As per body weight and condition',
+                    'image': 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Electrolyte Solution',
+                    'type': 'Hydration Support',
+                    'dosage': 'Provide fresh solution daily',
+                    'image': 'https://images.unsplash.com/photo-1584362917165-526a968579e8?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Anti-diarrheal Support',
+                    'type': 'Symptom Management',
+                    'dosage': 'As prescribed by veterinarian',
+                    'image': 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=300&h=200&fit=crop'
+                }
+            ]
+        },
+        'Flystrike': {
+            'description': 'Maggot infestation in wounds or soiled fleece areas, potentially life-threatening',
+            'treatment': 'Immediate maggot removal and wound care with prevention measures',
+            'medicines': [
+                {
+                    'name': 'Cypermethrin Pour-On (Crovect)',
+                    'type': 'Insecticidal Treatment',
+                    'dosage': 'Apply 5ml per 50kg body weight along backline',
+                    'image': 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Dicyclanil (CLiK)',
+                    'type': 'Preventative Insect Growth Regulator',
+                    'dosage': 'Apply to susceptible areas before fly season',
+                    'image': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Wound Cleansing Solution (Chlorhexidine)',
+                    'type': 'Antiseptic Cleanser',
+                    'dosage': 'Clean wounds thoroughly before treatment',
+                    'image': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Broad Spectrum Antibiotic',
+                    'type': 'Infection Prevention',
+                    'dosage': 'As prescribed for secondary infection',
+                    'image': 'https://images.unsplash.com/photo-1584362917165-526a968579e8?w=300&h=200&fit=crop'
+                }
+            ]
+        },
+        'Healthy': {
+            'description': 'Your sheep appears to be in excellent health',
+            'treatment': 'Maintain regular preventive care and flock health monitoring',
+            'medicines': [
+                {
+                    'name': 'Sheep Drench (Multi-species Wormer)',
+                    'type': 'Parasitic Prevention',
+                    'dosage': 'As per weight chart, regular rotation of active ingredients',
+                    'image': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Vitamin E + Selenium Injection',
+                    'type': 'Nutritional Supplement',
+                    'dosage': '1-2ml intramuscularly every 3-6 months',
+                    'image': 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Annual Vaccination (5-in-1)',
+                    'type': 'Disease Prevention',
+                    'dosage': '2ml subcutaneously annually',
+                    'image': 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=300&h=200&fit=crop'
+                },
+                {
+                    'name': 'Foot Bath Solution (Zinc Sulphate)',
+                    'type': 'Hoof Health Maintenance',
+                    'dosage': 'Weekly foot bath for flock',
+                    'image': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=300&h=200&fit=crop'
+                }
+            ]
+        }
     }
 }
 
@@ -1329,7 +1654,7 @@ def login():
         session['user_name'] = user['name']
         session['user_email'] = user['email']
         
-        print(f"✅ User logged in successfully: {email}")
+        print(f" User logged in successfully: {email}")
         
         return jsonify({
             'success': True, 
@@ -1338,7 +1663,7 @@ def login():
         })
         
     except Exception as e:
-        print(f"❌ Login error: {str(e)}")
+        print(f"  Login error: {str(e)}")
         return jsonify({'success': False, 'message': 'An error occurred during login'}), 500
 
 @app.route('/auth/signup', methods=['POST'])
@@ -1350,7 +1675,7 @@ def signup():
         # Check if database is available
         is_connected, status_msg = get_db_status()
         if not is_connected:
-            print(f"❌ Database not available: {status_msg}")
+            print(f" Database not available: {status_msg}")
             return jsonify({
                 'success': False, 
                 'message': f'Database connection unavailable: {status_msg}. Please try again later.'
@@ -1371,37 +1696,37 @@ def signup():
         
         # Validation
         if not all([name, email, password, confirm_password]):
-            print("❌ Missing required fields")  # Debug log
+            print("  Missing required fields")  # Debug log
             missing_fields = []
             if not name: missing_fields.append('name')
             if not email: missing_fields.append('email')
             if not password: missing_fields.append('password')
             if not confirm_password: missing_fields.append('confirm_password')
-            print(f"❌ Missing fields: {missing_fields}")
+            print(f"  Missing fields: {missing_fields}")
             return jsonify({'success': False, 'message': 'All fields are required'}), 400
         
         if password != confirm_password:
-            print("❌ Passwords don't match")  # Debug log
+            print("  Passwords don't match")  # Debug log
             return jsonify({'success': False, 'message': 'Passwords do not match'}), 400
         
         if not validate_email(email):
-            print(f"❌ Invalid email: {email}")  # Debug log
+            print(f"  Invalid email: {email}")  # Debug log
             return jsonify({'success': False, 'message': 'Invalid email format'}), 400
         
         is_valid, message = validate_password(password)
         if not is_valid:
-            print(f"❌ Password validation failed: {message}")  # Debug log
+            print(f"  Password validation failed: {message}")  # Debug log
             return jsonify({'success': False, 'message': message}), 400
         
         # Check if user already exists
-        print(f"🔍 Checking if user exists: {email}")  # Debug log
+        print(f"  Checking if user exists: {email}")  # Debug log
         existing_user = users_collection.find_one({'email': email})
         if existing_user:
-            print(f"❌ User already exists: {email}")  # Debug log
+            print(f"  User already exists: {email}")  # Debug log
             return jsonify({'success': False, 'message': 'Email already registered'}), 409
         
         # Create new user
-        print(f"📝 Creating new user: {email}")  # Debug log
+        print(f"  Creating new user: {email}")  # Debug log
         hashed_password = hash_password(password)
         user_data = {
             'name': name,
@@ -1412,16 +1737,16 @@ def signup():
             'is_active': True
         }
         
-        print(f"💾 Inserting user data into MongoDB...")  # Debug log
+        print(f"  Inserting user data into MongoDB...")  # Debug log
         result = users_collection.insert_one(user_data)
-        print(f"✅ User created with ID: {result.inserted_id}")  # Debug log
+        print(f"  User created with ID: {result.inserted_id}")  # Debug log
         
         # Set session
         session['user_id'] = str(result.inserted_id)
         session['user_name'] = name
         session['user_email'] = email
         
-        print(f"✅ Session created for user: {name}")  # Debug log
+        print(f"  Session created for user: {name}")  # Debug log
         
         return jsonify({
             'success': True, 
@@ -1430,13 +1755,13 @@ def signup():
         })
         
     except Exception as e:
-        print(f"❌ Signup error: {str(e)}")  # Debug log
-        print(f"❌ Error type: {type(e).__name__}")  # Debug log
+        print(f"  Signup error: {str(e)}")  # Debug log
+        print(f"  Error type: {type(e).__name__}")  # Debug log
         import traceback
-        print(f"❌ Full traceback: {traceback.format_exc()}")  # Debug log
+        print(f" Full traceback: {traceback.format_exc()}")  # Debug log
         return jsonify({'success': False, 'message': 'An error occurred during signup'}), 500
         import traceback
-        print(f"❌ Full traceback: {traceback.format_exc()}")  # Debug log
+        print(f" Full traceback: {traceback.format_exc()}")  # Debug log
         return jsonify({'success': False, 'message': f'An error occurred during signup: {str(e)}'}), 500
 
 @app.route('/test-db')
@@ -1490,7 +1815,7 @@ def logout():
 def admin_login():
     """Admin login page and handler"""
     if request.method == 'GET':
-        print("🔍 DEBUG: Admin login page accessed")
+        print(" DEBUG: Admin login page accessed")
         if 'admin_logged_in' in session:
             return redirect(url_for('admin_dashboard'))
         return render_template('admin_login.html')
@@ -1509,7 +1834,7 @@ def admin_login():
             if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
                 session['admin_logged_in'] = True
                 session['admin_username'] = username
-                print(f"✅ Admin logged in successfully: {username}")
+                print(f" Admin logged in successfully: {username}")
                 return jsonify({
                     'success': True,
                     'message': 'Admin login successful',
@@ -1519,7 +1844,7 @@ def admin_login():
                 return jsonify({'success': False, 'message': 'Invalid admin credentials'}), 401
                 
         except Exception as e:
-            print(f"❌ Admin login error: {str(e)}")
+            print(f" Admin login error: {str(e)}")
             return jsonify({'success': False, 'message': 'An error occurred during admin login'}), 500
 
 @app.route('/admin-dashboard')
@@ -1600,7 +1925,7 @@ def admin_dashboard():
         return render_template('admin_dashboard.html', stats=stats, db_available=is_connected)
         
     except Exception as e:
-        print(f"❌ Admin dashboard error: {str(e)}")
+        print(f" Admin dashboard error: {str(e)}")
         flash('Error loading admin dashboard', 'error')
         return render_template('admin_dashboard.html', stats={
             'total_users': 0,
@@ -1709,7 +2034,7 @@ def export_admin_report():
             spaceAfter=30,
             textColor=colors.Color(0.18, 0.55, 0.34)  # Green color
         )
-        story.append(Paragraph("PashuAarogyam - Admin Dashboard Report", title_style))
+        story.append(Paragraph("PashuArogyam - Admin Dashboard Report", title_style))
         story.append(Spacer(1, 20))
         
         # Date and time
@@ -1879,7 +2204,7 @@ def admin_api_stats():
         return jsonify({'success': True, 'stats': stats})
         
     except Exception as e:
-        print(f"❌ Admin API stats error: {str(e)}")
+        print(f" Admin API stats error: {str(e)}")
         return jsonify({'success': False, 'message': 'Error fetching statistics'}), 500
 
 @app.route('/predict_disease', methods=['POST'])
@@ -2551,6 +2876,13 @@ def dog_detection():
         return redirect(url_for('login_page'))
     return render_template('dog_detection.html')
 
+@app.route('/sheep_detection')
+def sheep_detection():
+    """Sheep disease detection page"""
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    return render_template('sheep_detection.html')
+
 # =================== INTEGRATED IMAGE + SYMPTOMS PREDICTION ===================
 
 @app.route('/integrated_prediction')
@@ -2559,6 +2891,177 @@ def integrated_prediction():
     if 'user_id' not in session:
         return redirect(url_for('login_page'))
     return render_template('integrated_prediction.html')
+
+@app.route('/predict/sheep', methods=['POST'])
+def predict_sheep():
+    """Predict sheep diseases using YOLOv8 model"""
+    try:
+        # Check if model is loaded
+        if 'sheep' not in models:
+            return jsonify({
+                'success': False,
+                'error': 'Sheep disease detection model is not available',
+                'show_popup': True
+            })
+
+        # Check if image is provided
+        if 'image' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No image file provided',
+                'show_popup': True
+            })
+
+        file = request.files['image']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No image file selected',
+                'show_popup': True
+            })
+
+        if file and allowed_file(file.filename):
+            # Read image
+            image_bytes = file.read()
+            image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+            
+            # Run prediction
+            results = models['sheep'](image)
+            
+            # Process results - handle both classification and detection models
+            predictions = []
+            for result in results:
+                # For detection models (with boxes)
+                if hasattr(result, 'boxes') and result.boxes is not None and len(result.boxes) > 0:
+                    for box in result.boxes:
+                        class_id = int(box.cls[0])
+                        confidence = float(box.conf[0])
+                        class_name = result.names[class_id]
+                        
+                        predictions.append({
+                            'class': class_name,
+                            'confidence': confidence
+                        })
+                # For classification models (without boxes)
+                elif hasattr(result, 'probs') and result.probs is not None:
+                    probs = result.probs.data.cpu().numpy()
+                    for class_id, confidence in enumerate(probs):
+                        if confidence > 0.01:  # Only include predictions with >1% confidence
+                            class_name = result.names[class_id]
+                            predictions.append({
+                                'class': class_name,
+                                'confidence': float(confidence)
+                            })
+                # Fallback: try to get top predictions directly
+                else:
+                    try:
+                        # Try accessing results directly
+                        if hasattr(result, 'names') and result.names:
+                            for class_id, class_name in result.names.items():
+                                # This is a fallback - we'll create dummy predictions
+                                predictions.append({
+                                    'class': class_name,
+                                    'confidence': 0.5  # Default confidence
+                                })
+                            break  # Only take the first result in this case
+                    except Exception as fallback_error:
+                        print(f"Fallback prediction failed: {fallback_error}")
+                        # If all else fails, return a default response
+                        predictions.append({
+                            'class': 'Healthy',
+                            'confidence': 0.5
+                        })
+            
+            # Sort by confidence
+            predictions.sort(key=lambda x: x['confidence'], reverse=True)
+            
+            # Enhanced animal validation with specific error messages
+            if not predictions:
+                return jsonify({
+                    'success': False,
+                    'error': 'No Sheep Detected!',
+                    'detailed_message': 'The uploaded image does not contain a recognizable sheep. Please upload a clear image of a sheep for disease detection.',
+                    'validation_failed': True,
+                    'animal_expected': 'sheep',
+                    'show_popup': True,
+                    'confidence': 0.0
+                })
+            
+            max_confidence = predictions[0]['confidence']
+            
+            if max_confidence < 0.25:
+                return jsonify({
+                    'success': False,
+                    'error': '🐑 Wrong Animal Detected!',
+                    'detailed_message': 'This image does not appear to contain a sheep. Our AI model is specifically trained for sheep disease detection. Please upload a clear image of a sheep to get accurate results.',
+                    'validation_failed': True,
+                    'animal_expected': 'sheep',
+                    'show_popup': True,
+                    'confidence': max_confidence
+                })
+            
+            
+            elif max_confidence < 0.50:
+                return jsonify({
+                    'success': False,
+                    'error': '📸 Image Quality Too Low!',
+                    'detailed_message': 'The image quality is too low for reliable sheep disease detection. Please upload a clearer, well-lit image of the sheep. Make sure the sheep is clearly visible and the photo is not blurry.',
+                    'validation_failed': True,
+                    'animal_expected': 'sheep',
+                    'show_popup': True,
+                    'confidence': max_confidence
+                })
+            
+            
+            elif max_confidence < 0.65:
+                predictions[0]['quality_warning'] = True
+            
+            if predictions_collection is not None:
+                try:
+                    # Get the top prediction for main storage
+                    top_prediction = predictions[0] if predictions else {'class': 'Unknown', 'confidence': 0.0}
+                    
+                    prediction_doc = {
+                        'user_id': session.get('user_id'),
+                        'username': session.get('user_name'),
+                        'animal_type': 'sheep',
+                        'prediction': top_prediction['class'],  # Main predicted disease
+                        'confidence': top_prediction['confidence'],  # Confidence score
+                        'predictions': predictions,  # All predictions for reference
+                        'created_at': datetime.now(timezone.utc),  # Date of prediction
+                        'timestamp': datetime.now(timezone.utc),  # Keep for backward compatibility
+                        'model_used': 'sheep_disease_model.pt'
+                    }
+                    predictions_collection.insert_one(prediction_doc)
+                except Exception as db_error:
+                    print(f"Database error: {db_error}")
+            
+            # Get treatment suggestions for the top prediction
+            top_prediction = predictions[0] if predictions else {'class': 'Unknown', 'confidence': 0.0}
+            treatment_info = get_treatment_suggestions('sheep', top_prediction['class'])
+            
+            return jsonify({
+                'success': True,
+                'predictions': predictions,
+                'model_info': 'YOLOv8 Sheep Disease Detection Model',
+                'treatment': treatment_info
+            })
+        
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid file format. Supported formats: PNG, JPG, JPEG, WebP',
+                'show_popup': True
+            })
+            
+    except Exception as e:
+        print(f"Error in sheep prediction: {e}")
+        print(f"Error traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': f'Prediction failed: {str(e)}',
+            'show_popup': True
+        })
 
 @app.route('/predict/integrated', methods=['POST'])
 def predict_integrated():
@@ -2621,13 +3124,13 @@ def predict_integrated():
                     image_analysis = analyze_image_with_gemini_advanced(image, animal_type, all_symptoms)
                     
                 except Exception as img_error:
-                    print(f"⚠️ Image analysis error: {img_error}")
+                    print(f" Image analysis error: {img_error}")
                     # Check if it's a rate limit error
                     error_str = str(img_error).lower()
                     if "429" in error_str or "resource exhausted" in error_str or "rate limit" in error_str:
                         return jsonify({
                             'success': False,
-                            'error': '🚫 AI Service Temporarily Overloaded',
+                            'error': ' AI Service Temporarily Overloaded',
                             'detailed_message': 'Our AI analysis service is currently experiencing high demand. Please wait a moment and try again, or proceed with symptom-only analysis.',
                             'rate_limited': True,
                             'retry_after': 60  # Suggest retry after 60 seconds
@@ -2653,13 +3156,13 @@ def predict_integrated():
                 has_image=has_image
             )
         except Exception as pred_error:
-            print(f"⚠️ Prediction generation error: {pred_error}")
+            print(f" Prediction generation error: {pred_error}")
             # Check if it's a rate limit error
             error_str = str(pred_error).lower()
             if "429" in error_str or "resource exhausted" in error_str or "rate limit" in error_str:
                 return jsonify({
                     'success': False,
-                    'error': '🚫 AI Service Temporarily Overloaded',
+                    'error': ' AI Service Temporarily Overloaded',
                     'detailed_message': 'Our AI prediction service is currently experiencing high demand. Please wait a moment and try again.',
                     'rate_limited': True,
                     'retry_after': 60
@@ -2697,10 +3200,10 @@ def predict_integrated():
             
             if predictions_collection is not None:
                 predictions_collection.insert_one(prediction_data)
-                print(f"✅ Integrated prediction saved to database")
+                print(f" Integrated prediction saved to database")
             
         except Exception as db_error:
-            print(f"⚠️ Database save error: {db_error}")
+            print(f" Database save error: {db_error}")
         
         return jsonify({
             'success': True,
@@ -2710,7 +3213,7 @@ def predict_integrated():
         })
         
     except Exception as e:
-        print(f"❌ Error in integrated prediction: {e}")
+        print(f" Error in integrated prediction: {e}")
         return jsonify({
             'success': False,
             'error': f'Prediction failed: {str(e)}'
@@ -2766,7 +3269,7 @@ Provide analysis in JSON format:
         response_text, error = call_gemini_with_retry('gemini-2.0-flash-exp', prompt, image_parts, api_key=GEMINI_API_KEY_DISEASE)
         
         if error:
-            print(f"⚠️ Gemini image analysis error: {error}")
+            print(f" Gemini image analysis error: {error}")
             return None
             
         if response_text:
@@ -2787,7 +3290,7 @@ Provide analysis in JSON format:
         return None
             
     except Exception as e:
-        print(f"❌ Image analysis error: {e}")
+        print(f" Image analysis error: {e}")
         return None
 
 
@@ -2870,7 +3373,7 @@ Focus on providing the most accurate diagnosis possible by integrating ALL avail
             response_text, error = call_gemini_with_retry('gemini-2.0-flash-exp', prompt, api_key=GEMINI_API_KEY_DISEASE)
             
             if error:
-                print(f"⚠️ Gemini AI error: {error}")
+                print(f" Gemini AI error: {error}")
                 return generate_fallback_comprehensive_prediction(animal_info, symptoms, severity, has_image)
                 
             if response_text:
@@ -2897,7 +3400,7 @@ Focus on providing the most accurate diagnosis possible by integrating ALL avail
             return generate_fallback_comprehensive_prediction(animal_info, symptoms, severity, has_image)
             
     except Exception as e:
-        print(f"❌ Error in comprehensive prediction: {e}")
+        print(f" Error in comprehensive prediction: {e}")
         return generate_fallback_comprehensive_prediction(animal_info, symptoms, severity, has_image)
 
 
@@ -3253,6 +3756,24 @@ def chat_endpoint():
     
     # Check if chatbot is available
     is_available, status_message = get_chatbot_status()
+    
+    # Handle quota exceeded case with fallback response
+    if is_available == "quota_exceeded":
+        # Get fallback response from chatbot
+        user_message = request.get_json().get('message', '') if request.get_json() else ''
+        fallback_response = chatbot._get_fallback_response(user_message) if chatbot else get_enhanced_fallback_response(user_message)
+        
+        return jsonify({
+            'success': True,
+            'response': f"I've reached my daily usage limit, but here's some helpful guidance:\n\n{fallback_response}",
+            'is_fallback': True,
+            'quota_info': {
+                'quota_exceeded': True,
+                'reset_time': chatbot.rate_limiter.quota_reset_time if chatbot and hasattr(chatbot, 'rate_limiter') else None
+            }
+        })
+    
+    # Handle other unavailability issues
     if not is_available:
         return jsonify({
             'success': False, 
@@ -3300,8 +3821,8 @@ def chat_endpoint():
         if not session_key:
             session_key = f"chat_{session['user_id']}_{int(time.time())}"
         
-        print(f"📝 Processing message: {message[:50]}{'...' if len(message) > 50 else ''}")
-        print(f"🔑 Session key: {session_key}")
+        print(f" Processing message: {message[:50]}{'...' if len(message) > 50 else ''}")
+        print(f" Session key: {session_key}")
         
         # Load previous conversation history for this session from chatbot
         if hasattr(chatbot, 'load_session_history'):
@@ -3311,7 +3832,7 @@ def chat_endpoint():
         response = chatbot.process_text_query(message, language, session_key)
         
         processing_time = time.time() - start_time
-        print(f"⚡ Response generated in {processing_time:.2f} seconds")
+        print(f" Response generated in {processing_time:.2f} seconds")
         
         # Store conversation in database with session key
         if db is not None and 'user_id' in session:
@@ -3350,6 +3871,20 @@ def upload_for_analysis():
     """Handle file uploads for analysis - optimized for better error handling"""
     # Check if chatbot is available
     is_available, status_message = get_chatbot_status()
+    
+    # Handle quota exceeded case with fallback response
+    if is_available == "quota_exceeded":
+        return jsonify({
+            'success': True,
+            'response': "I've reached my daily usage limit for file analysis. Please try again tomorrow or describe what you see in the image/document as text, and I can provide general guidance.",
+            'is_fallback': True,
+            'quota_info': {
+                'quota_exceeded': True,
+                'reset_time': chatbot.rate_limiter.quota_reset_time if chatbot and hasattr(chatbot, 'rate_limiter') else None
+            }
+        })
+    
+    # Handle other unavailability issues
     if not is_available:
         return jsonify({
             'success': False, 
@@ -3375,7 +3910,7 @@ def upload_for_analysis():
         filename = secure_filename(file.filename)
         file_ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
         
-        print(f"📁 Analyzing uploaded file: {filename} ({file_ext})")
+        print(f" Analyzing uploaded file: {filename} ({file_ext})")
         
         if file_ext in ['png', 'jpg', 'jpeg', 'webp']:
             # Process as image with better error handling
@@ -3408,7 +3943,7 @@ def upload_for_analysis():
             })
         
         processing_time = time.time() - start_time
-        print(f"⚡ File analysis completed in {processing_time:.2f} seconds")
+        print(f" File analysis completed in {processing_time:.2f} seconds")
         
         # Store conversation in database if available
         if db is not None and 'user_id' in session:
@@ -3446,6 +3981,20 @@ def get_languages():
     try:
         # Check if chatbot is available
         is_available, status_message = get_chatbot_status()
+        
+        # Handle quota exceeded case with fallback response
+        if is_available == "quota_exceeded":
+            return jsonify({
+                'success': True,
+                'response': "I've reached my daily usage limit for document analysis. Please try again tomorrow or copy the relevant text from the document and ask your question directly.",
+                'is_fallback': True,
+                'quota_info': {
+                    'quota_exceeded': True,
+                    'reset_time': chatbot.rate_limiter.quota_reset_time if chatbot and hasattr(chatbot, 'rate_limiter') else None
+                }
+            })
+        
+        # Handle other unavailability issues
         if not is_available:
             # Return basic language list even if chatbot is not available
             basic_languages = {
@@ -3643,6 +4192,29 @@ def chatbot_health_check():
     """Check chatbot service health"""
     # Check if chatbot is available
     is_available, status_message = get_chatbot_status()
+    
+    # Special handling for quota exceeded
+    if is_available == "quota_exceeded":
+        return jsonify({
+            'success': True,
+            'healthy': False,
+            'status': 'quota_exceeded',
+            'services': {
+                'genai_available': GEMINI_AVAILABLE,
+                'chatbot_available': CHATBOT_AVAILABLE,
+                'vision_available': False,
+                'pdf_available': False,
+                'translation_available': False,
+                'image_processing_available': False
+            },
+            'message': 'Daily quota limit reached. Service will resume tomorrow.',
+            'quota_info': {
+                'quota_exceeded': True,
+                'reset_time': chatbot.rate_limiter.quota_reset_time if chatbot and hasattr(chatbot, 'rate_limiter') else None
+            },
+            'fallback_available': True
+        })
+    
     if not is_available:
         return jsonify({
             'success': True,
@@ -3659,8 +4231,8 @@ def chatbot_health_check():
         })
     
     try:
-        # Test model health
-        model_healthy, health_message = chatbot.test_model_health()
+        # Test model health (skip API test to preserve quota for actual usage)
+        model_healthy, health_message = chatbot.test_model_health(skip_api_test=True)
         
         return jsonify({
             'success': True,
@@ -3801,14 +4373,14 @@ def consultation_chat(request_id):
         if 'created_at' in consultation:
             consultation['created_at'] = consultation['created_at'].strftime('%Y-%m-%d %H:%M:%S')
         
-        print(f"🔍 DEBUG: Consultant {session['consultant_id']} accessing consultation {request_id}")
-        print(f"🔍 DEBUG: Consultation data: {consultation.get('farmer_name', 'Unknown')} - {consultation.get('animal_type', 'Unknown')}")
-        print(f"🔍 DEBUG: User type: consultant")
+        print(f" DEBUG: Consultant {session['consultant_id']} accessing consultation {request_id}")
+        print(f" DEBUG: Consultation data: {consultation.get('farmer_name', 'Unknown')} - {consultation.get('animal_type', 'Unknown')}")
+        print(f" DEBUG: User type: consultant")
         
         return render_template('consultation_chat.html', consultation=consultation, is_farmer=False)
     except Exception as e:
-        print(f"❌ ERROR loading consultation chat: {e}")
-        print(f"❌ ERROR type: {type(e).__name__}")
+        print(f" ERROR loading consultation chat: {e}")
+        print(f" ERROR type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         flash('Error loading consultation chat', 'error')
@@ -3856,8 +4428,8 @@ def user_chat(request_id):
         
         return render_template('consultation_chat.html', consultation=consultation, is_farmer=True)
     except Exception as e:
-        print(f"❌ ERROR loading user chat: {e}")
-        print(f"❌ ERROR type: {type(e).__name__}")
+        print(f" ERROR loading user chat: {e}")
+        print(f" ERROR type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         flash('Error loading consultation chat', 'error')
@@ -4113,39 +4685,39 @@ def logout_consultant():
 @app.route('/api/consultation-requests', methods=['GET'])
 def get_consultation_requests():
     """Get consultation requests for dashboard"""
-    print(f"🔍 DEBUG: get_consultation_requests called")
-    print(f"🔍 DEBUG: consultation_requests_collection type: {type(consultation_requests_collection)}")
-    print(f"🔍 DEBUG: consultation_requests_collection is None: {consultation_requests_collection is None}")
+    print(f" DEBUG: get_consultation_requests called")
+    print(f" DEBUG: consultation_requests_collection type: {type(consultation_requests_collection)}")
+    print(f" DEBUG: consultation_requests_collection is None: {consultation_requests_collection is None}")
     
-    print(f"🔍 DEBUG: About to check session")
+    print(f" DEBUG: About to check session")
     if 'consultant_id' not in session:
-        print(f"🔍 DEBUG: Unauthorized - no consultant_id in session")
+        print(f" DEBUG: Unauthorized - no consultant_id in session")
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
-    print(f"🔍 DEBUG: Session check passed")
+    print(f" DEBUG: Session check passed")
     try:
-        print(f"🔍 DEBUG: About to check collection")
+        print(f" DEBUG: About to check collection")
         # Check if database is connected - using try-catch to handle any boolean conversion issues
         try:
             collection_available = consultation_requests_collection is not None
-            print(f"🔍 DEBUG: Collection available: {collection_available}")
+            print(f" DEBUG: Collection available: {collection_available}")
             if not collection_available:
-                print(f"🔍 DEBUG: Collection is None")
+                print(f" DEBUG: Collection is None")
                 return jsonify({'success': False, 'message': 'Database not available. Please try again later.'}), 500
         except Exception as collection_check_error:
-            print(f"🔍 DEBUG: Error checking collection: {collection_check_error}")
+            print(f" DEBUG: Error checking collection: {collection_check_error}")
             return jsonify({'success': False, 'message': 'Database connection issue.'}), 500
         
-        print(f"🔍 DEBUG: Collection check passed")
+        print(f" DEBUG: Collection check passed")
         # Get filter from query params
         status_filter = request.args.get('status', 'all')
-        print(f"🔍 DEBUG: Status filter: {status_filter}")
+        print(f" DEBUG: Status filter: {status_filter}")
         
         # Build query for consultant requests
         # Show both assigned requests and unassigned requests available for pickup
         consultant_id = session['consultant_id']
-        print(f"🔍 DEBUG: Current consultant ID: {consultant_id}")
-        print(f"🔍 DEBUG: Consultant ID type: {type(consultant_id)}")
+        print(f" DEBUG: Current consultant ID: {consultant_id}")
+        print(f" DEBUG: Consultant ID type: {type(consultant_id)}")
         
         # For debugging - let's see what requests exist in the database
         all_requests = list(consultation_requests_collection.find({}, {
@@ -4156,7 +4728,7 @@ def get_consultation_requests():
             'assigned_consultant_name': 1
         }).sort('created_at', -1).limit(5))
         
-        print(f"🔍 DEBUG: Recent requests in database:")
+        print(f" DEBUG: Recent requests in database:")
         for req in all_requests:
             print(f"   - ID: {req['_id']}, Farmer: {req.get('farmer_name')}, Assigned_to: {req.get('assigned_to')}, Status: {req.get('status')}")
         
@@ -4184,16 +4756,16 @@ def get_consultation_requests():
         else:
             query = {'assigned_to': consultant_id, 'status': status_filter}  # Other specific statuses
         
-        print(f"🔍 DEBUG: Query built for consultant {consultant_id}: {query}")
-        print(f"🔍 DEBUG: About to execute find")
+        print(f" DEBUG: Query built for consultant {consultant_id}: {query}")
+        print(f" DEBUG: About to execute find")
         
         # Get requests from database
         requests_cursor = consultation_requests_collection.find(query).sort('created_at', -1)
-        print(f"🔍 DEBUG: Find executed successfully")
+        print(f" DEBUG: Find executed successfully")
         requests = []
         
         for req in requests_cursor:
-            print(f"🔍 DEBUG: Found request - ID: {req['_id']}, Farmer: {req.get('farmer_name')}, Assigned_to: {req.get('assigned_to')}, Status: {req.get('status')}")
+            print(f" DEBUG: Found request - ID: {req['_id']}, Farmer: {req.get('farmer_name')}, Assigned_to: {req.get('assigned_to')}, Status: {req.get('status')}")
             # Convert ObjectId to string
             req['id'] = str(req['_id'])
             req['_id'] = str(req['_id'])
@@ -4204,7 +4776,7 @@ def get_consultation_requests():
             
             requests.append(req)
         
-        print(f"🔍 DEBUG: Total requests found for consultant {consultant_id}: {len(requests)}")
+        print(f" DEBUG: Total requests found for consultant {consultant_id}: {len(requests)}")
         return jsonify({'success': True, 'requests': requests})
         
     except Exception as e:
@@ -4221,7 +4793,7 @@ def accept_consultation_request(request_id):
         consultant_id = session['consultant_id']  # This is a string
         consultant_name = session['consultant_name']
         
-        print(f"🔍 DEBUG: Accept request - consultant_id: {consultant_id} (type: {type(consultant_id)})")
+        print(f" DEBUG: Accept request - consultant_id: {consultant_id} (type: {type(consultant_id)})")
         
         # First, try to find and assign unassigned requests to this consultant
         # This handles the auto-assign case
@@ -4241,7 +4813,7 @@ def accept_consultation_request(request_id):
             }
         )
         
-        print(f"🔍 DEBUG: Unassigned update result: {unassigned_result.modified_count}")
+        print(f" DEBUG: Unassigned update result: {unassigned_result.modified_count}")
         
         # If no unassigned request was found, try to accept an already assigned request
         if unassigned_result.modified_count == 0:
@@ -4259,7 +4831,7 @@ def accept_consultation_request(request_id):
                 }
             )
             
-            print(f"🔍 DEBUG: Assigned update result: {assigned_result.modified_count}")
+            print(f" DEBUG: Assigned update result: {assigned_result.modified_count}")
             
             if assigned_result.modified_count == 0:
                 return jsonify({'success': False, 'message': 'Request not found or not available for acceptance'}), 404
@@ -4285,18 +4857,18 @@ def accept_consultation_request(request_id):
 @app.route('/api/consultation/<request_id>/messages', methods=['GET'])
 def get_consultation_messages(request_id):
     """Get messages for a consultation (accessible by both consultants and farmers)"""
-    print(f"🔍 DEBUG: GET /api/consultation/{request_id}/messages called")
-    print(f"🔍 DEBUG: Session data: {dict(session)}")
+    print(f" DEBUG: GET /api/consultation/{request_id}/messages called")
+    print(f" DEBUG: Session data: {dict(session)}")
     
     # Check if either consultant or farmer is logged in
     if 'consultant_id' not in session and 'user_id' not in session:
-        print("❌ DEBUG: No consultant_id or user_id in session")
+        print(" DEBUG: No consultant_id or user_id in session")
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     try:
         # Check if database collections are available
         if not MONGODB_AVAILABLE or messages_collection is None or consultation_requests_collection is None:
-            print("❌ DEBUG: Database not available")
+            print(" DEBUG: Database not available")
             return jsonify({'success': False, 'message': 'Database service unavailable'}), 503
         
         # Find the consultation
@@ -4305,7 +4877,7 @@ def get_consultation_messages(request_id):
         })
         
         if not consultation:
-            print("❌ DEBUG: Consultation not found")
+            print(" DEBUG: Consultation not found")
             return jsonify({'success': False, 'message': 'Consultation not found'}), 404
         
         # Verify access rights
@@ -4314,7 +4886,7 @@ def get_consultation_messages(request_id):
         if 'consultant_id' in session:
             # Consultant access - must be assigned to this consultation
             has_access = consultation.get('assigned_to') == session['consultant_id']
-            print(f"🔍 DEBUG: Consultant access check - assigned_to: {consultation.get('assigned_to')}, consultant_id: {session['consultant_id']}")
+            print(f" DEBUG: Consultant access check - assigned_to: {consultation.get('assigned_to')}, consultant_id: {session['consultant_id']}")
         
         elif 'user_id' in session:
             # Farmer access - must be the consultation creator
@@ -4328,7 +4900,7 @@ def get_consultation_messages(request_id):
             print(f"🔍 DEBUG: Farmer access check - created_by_user_id: {consultation.get('created_by_user_id')}, user_id: {session['user_id']}")
         
         if not has_access:
-            print("❌ DEBUG: Access denied to consultation")
+            print(" DEBUG: Access denied to consultation")
             return jsonify({'success': False, 'message': 'Access denied'}), 403
         
         # Get messages
@@ -4349,15 +4921,15 @@ def get_consultation_messages(request_id):
                 msg['timestamp'] = msg['created_at'].strftime('%Y-%m-%d %H:%M:%S')
             messages.append(msg)
         
-        print(f"🔍 DEBUG: Found {message_count} messages for consultation {request_id}")
+        print(f" DEBUG: Found {message_count} messages for consultation {request_id}")
         for i, msg in enumerate(messages):
-            print(f"🔍 DEBUG: Message {i+1}: {msg.get('sender_type', 'unknown')} - {msg.get('message', '')[:50]}...")
+            print(f" DEBUG: Message {i+1}: {msg.get('sender_type', 'unknown')} - {msg.get('message', '')[:50]}...")
         
         return jsonify({'success': True, 'messages': messages})
         
     except Exception as e:
-        print(f"❌ ERROR getting messages: {e}")
-        print(f"❌ ERROR type: {type(e).__name__}")
+        print(f" ERROR getting messages: {e}")
+        print(f" ERROR type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': 'Failed to load messages'}), 500
@@ -4365,25 +4937,25 @@ def get_consultation_messages(request_id):
 @app.route('/api/consultation/<request_id>/messages', methods=['POST'])
 def send_consultation_message(request_id):
     """Send a message in consultation chat (for both consultants and farmers)"""
-    print(f"🔍 DEBUG: POST /api/consultation/{request_id}/messages called")
-    print(f"🔍 DEBUG: Session data: {dict(session)}")
+    print(f" DEBUG: POST /api/consultation/{request_id}/messages called")
+    print(f" DEBUG: Session data: {dict(session)}")
     
     # Check if either consultant or farmer is logged in
     if 'consultant_id' not in session and 'user_id' not in session:
-        print("❌ DEBUG: No consultant_id or user_id in session")
+        print(" DEBUG: No consultant_id or user_id in session")
         return jsonify({'success': False, 'message': 'Unauthorized - Please login again'}), 401
     
     try:
         # Check if database collections are available
         if not MONGODB_AVAILABLE or messages_collection is None or consultation_requests_collection is None:
-            print("❌ DEBUG: Database not available")
+            print(" DEBUG: Database not available")
             return jsonify({'success': False, 'message': 'Database service unavailable'}), 503
         
         data = request.get_json()
-        print(f"🔍 DEBUG: Request data: {data}")
+        print(f" DEBUG: Request data: {data}")
         
         if not data or not data.get('message'):
-            print("❌ DEBUG: No message content provided")
+            print(" DEBUG: No message content provided")
             return jsonify({'success': False, 'message': 'Message content is required'}), 400
         
         # Find the consultation
@@ -4392,14 +4964,14 @@ def send_consultation_message(request_id):
         })
         
         if not consultation:
-            print("❌ DEBUG: Consultation not found")
+            print(" DEBUG: Consultation not found")
             return jsonify({'success': False, 'message': 'Consultation not found'}), 404
         
         # Determine sender type and verify access
         if 'consultant_id' in session:
             # Consultant sending message
             if consultation.get('assigned_to') != session['consultant_id']:
-                print("❌ DEBUG: Consultant not assigned to this consultation")
+                print(" DEBUG: Consultant not assigned to this consultation")
                 return jsonify({'success': False, 'message': 'Consultation not assigned to you'}), 403
             
             sender_type = 'consultant'
@@ -4417,14 +4989,14 @@ def send_consultation_message(request_id):
             )
             
             if not has_access:
-                print("❌ DEBUG: Farmer does not have access to this consultation")
+                print(" DEBUG: Farmer does not have access to this consultation")
                 return jsonify({'success': False, 'message': 'Access denied'}), 403
             
             sender_type = 'farmer'
             sender_id = session['user_id']
             sender_name = user.get('name', 'Farmer')
         
-        print(f"🔍 DEBUG: Sender type: {sender_type}, Sender: {sender_name}")
+        print(f" DEBUG: Sender type: {sender_type}, Sender: {sender_name}")
         
         # Create message document
         message_doc = {
@@ -4436,24 +5008,24 @@ def send_consultation_message(request_id):
             'timestamp': datetime.now(timezone.utc)
         }
         
-        print(f"🔍 DEBUG: Creating message document: {message_doc}")
+        print(f" DEBUG: Creating message document: {message_doc}")
         
         # Insert message
         result = messages_collection.insert_one(message_doc)
         
-        print(f"✅ DEBUG: Message inserted successfully with ID: {result.inserted_id}")
+        print(f" DEBUG: Message inserted successfully with ID: {result.inserted_id}")
         
         # Return the message with ID
         message_doc['id'] = str(result.inserted_id)
         message_doc['_id'] = str(result.inserted_id)
         message_doc['timestamp'] = message_doc['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
         
-        print(f"✅ DEBUG: Returning message: {message_doc}")
+        print(f" DEBUG: Returning message: {message_doc}")
         return jsonify({'success': True, 'message': message_doc})
         
     except Exception as e:
-        print(f"❌ ERROR sending message: {e}")
-        print(f"❌ ERROR type: {type(e).__name__}")
+        print(f" ERROR sending message: {e}")
+        print(f" ERROR type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Failed to send message: {str(e)}'}), 500
@@ -4461,17 +5033,17 @@ def send_consultation_message(request_id):
 @app.route('/api/consultation/<request_id>/upload', methods=['POST'])
 def upload_consultation_file(request_id):
     """Upload a file to consultation chat"""
-    print(f"🔍 DEBUG: POST /api/consultation/{request_id}/upload called")
+    print(f" DEBUG: POST /api/consultation/{request_id}/upload called")
     
     # Check if either consultant or farmer is logged in
     if 'consultant_id' not in session and 'user_id' not in session:
-        print("❌ DEBUG: No consultant_id or user_id in session")
+        print(" DEBUG: No consultant_id or user_id in session")
         return jsonify({'success': False, 'message': 'Unauthorized - Please login again'}), 401
     
     try:
         # Check if database collections are available
         if not MONGODB_AVAILABLE or messages_collection is None or consultation_requests_collection is None:
-            print("❌ DEBUG: Database not available")
+            print(" DEBUG: Database not available")
             return jsonify({'success': False, 'message': 'Database service unavailable'}), 503
         
         # Check if file was uploaded
@@ -4490,14 +5062,14 @@ def upload_consultation_file(request_id):
         })
         
         if not consultation:
-            print("❌ DEBUG: Consultation not found")
+            print(" DEBUG: Consultation not found")
             return jsonify({'success': False, 'message': 'Consultation not found'}), 404
         
         # Determine sender type and verify access
         if 'consultant_id' in session:
             # Consultant sending file
             if consultation.get('assigned_to') != session['consultant_id']:
-                print("❌ DEBUG: Consultant not assigned to this consultation")
+                print(" DEBUG: Consultant not assigned to this consultation")
                 return jsonify({'success': False, 'message': 'Consultation not assigned to you'}), 403
             
             sender_type = 'consultant'
@@ -4515,7 +5087,7 @@ def upload_consultation_file(request_id):
             )
             
             if not has_access:
-                print("❌ DEBUG: Farmer does not have access to this consultation")
+                print(" DEBUG: Farmer does not have access to this consultation")
                 return jsonify({'success': False, 'message': 'Access denied'}), 403
             
             sender_type = 'farmer'
@@ -4575,19 +5147,19 @@ def upload_consultation_file(request_id):
         # Insert message
         result = messages_collection.insert_one(message_doc)
         
-        print(f"✅ DEBUG: File message inserted successfully with ID: {result.inserted_id}")
+        print(f" DEBUG: File message inserted successfully with ID: {result.inserted_id}")
         
         # Return the message with ID
         message_doc['id'] = str(result.inserted_id)
         message_doc['_id'] = str(result.inserted_id)
         message_doc['timestamp'] = message_doc['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
         
-        print(f"✅ DEBUG: Returning file message: {message_doc}")
+        print(f" DEBUG: Returning file message: {message_doc}")
         return jsonify({'success': True, 'message': message_doc})
         
     except Exception as e:
-        print(f"❌ ERROR uploading file: {e}")
-        print(f"❌ ERROR type: {type(e).__name__}")
+        print(f" ERROR uploading file: {e}")
+        print(f" ERROR type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Failed to upload file: {str(e)}'}), 500
@@ -4595,17 +5167,17 @@ def upload_consultation_file(request_id):
 @app.route('/api/consultation/<request_id>/download/<file_id>')
 def download_consultation_file(request_id, file_id):
     """Download a file from consultation chat"""
-    print(f"🔍 DEBUG: GET /api/consultation/{request_id}/download/{file_id} called")
+    print(f" DEBUG: GET /api/consultation/{request_id}/download/{file_id} called")
     
     # Check if either consultant or farmer is logged in
     if 'consultant_id' not in session and 'user_id' not in session:
-        print("❌ DEBUG: No consultant_id or user_id in session")
+        print(" DEBUG: No consultant_id or user_id in session")
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     try:
         # Check if database collections are available
         if not MONGODB_AVAILABLE or messages_collection is None or consultation_requests_collection is None:
-            print("❌ DEBUG: Database not available")
+            print(" DEBUG: Database not available")
             return jsonify({'success': False, 'message': 'Database service unavailable'}), 503
         
         # Find the consultation
@@ -4614,7 +5186,7 @@ def download_consultation_file(request_id, file_id):
         })
         
         if not consultation:
-            print("❌ DEBUG: Consultation not found")
+            print(" DEBUG: Consultation not found")
             return jsonify({'success': False, 'message': 'Consultation not found'}), 404
         
         # Verify access to consultation
@@ -4634,7 +5206,7 @@ def download_consultation_file(request_id, file_id):
             )
         
         if not has_access:
-            print("❌ DEBUG: User does not have access to this consultation")
+            print(" DEBUG: User does not have access to this consultation")
             return jsonify({'success': False, 'message': 'Access denied'}), 403
         
         # Find the message with the file
@@ -4644,7 +5216,7 @@ def download_consultation_file(request_id, file_id):
         })
         
         if not message or 'file_info' not in message:
-            print("❌ DEBUG: File not found in messages")
+            print(" DEBUG: File not found in messages")
             return jsonify({'success': False, 'message': 'File not found'}), 404
         
         file_info = message['file_info']
@@ -4652,7 +5224,7 @@ def download_consultation_file(request_id, file_id):
         
         # Check if file exists on disk
         if not os.path.exists(file_path):
-            print(f"❌ DEBUG: File not found on disk: {file_path}")
+            print(f" DEBUG: File not found on disk: {file_path}")
             return jsonify({'success': False, 'message': 'File not found on server'}), 404
         
         # Send file
@@ -4665,8 +5237,8 @@ def download_consultation_file(request_id, file_id):
         )
         
     except Exception as e:
-        print(f"❌ ERROR downloading file: {e}")
-        print(f"❌ ERROR type: {type(e).__name__}")
+        print(f" ERROR downloading file: {e}")
+        print(f" ERROR type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Failed to download file: {str(e)}'}), 500
@@ -4674,24 +5246,24 @@ def download_consultation_file(request_id, file_id):
 @app.route('/api/consultation-requests/<request_id>', methods=['GET'])
 def get_consultation_request_details(request_id):
     """Get details of a specific consultation request"""
-    print(f"🔍 DEBUG: GET /api/consultation-requests/{request_id} called")
-    print(f"🔍 DEBUG: Session data: {dict(session)}")
+    print(f" DEBUG: GET /api/consultation-requests/{request_id} called")
+    print(f" DEBUG: Session data: {dict(session)}")
     
     # Check if either consultant or farmer is logged in
     if 'consultant_id' not in session and 'user_id' not in session:
-        print("❌ DEBUG: No consultant_id or user_id in session")
+        print(" DEBUG: No consultant_id or user_id in session")
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     try:
         # Check if database collections are available
         if not MONGODB_AVAILABLE or consultation_requests_collection is None or users_collection is None:
-            print("❌ DEBUG: Database not available")
+            print(" DEBUG: Database not available")
             return jsonify({'success': False, 'message': 'Database service unavailable'}), 503
         
         consultation = consultation_requests_collection.find_one({'_id': ObjectId(request_id)})
         
         if not consultation:
-            print("❌ DEBUG: Consultation not found")
+            print(" DEBUG: Consultation not found")
             return jsonify({'success': False, 'message': 'Consultation not found'}), 404
         
         # Verify access rights
@@ -4700,7 +5272,7 @@ def get_consultation_request_details(request_id):
         if 'consultant_id' in session:
             # Consultant access - must be assigned to this consultation
             has_access = consultation.get('assigned_to') == session['consultant_id']
-            print(f"🔍 DEBUG: Consultant access check - assigned_to: {consultation.get('assigned_to')}, consultant_id: {session['consultant_id']}")
+            print(f" DEBUG: Consultant access check - assigned_to: {consultation.get('assigned_to')}, consultant_id: {session['consultant_id']}")
         elif 'user_id' in session:
             # Farmer access - must be the consultation creator
             try:
@@ -4712,21 +5284,21 @@ def get_consultation_request_details(request_id):
                         consultation.get('contact_phone') == user.get('phone', '') or
                         consultation.get('farmer_name') == user.get('name', '')
                     )
-                    print(f"🔍 DEBUG: Farmer access check - created_by_user_id: {consultation.get('created_by_user_id')}, user_id: {session['user_id']}")
-                    print(f"🔍 DEBUG: Farmer access check - farmer_email: {consultation.get('farmer_email')}, user_email: {user.get('email', '')}")
+                    print(f" DEBUG: Farmer access check - created_by_user_id: {consultation.get('created_by_user_id')}, user_id: {session['user_id']}")
+                    print(f" DEBUG: Farmer access check - farmer_email: {consultation.get('farmer_email')}, user_email: {user.get('email', '')}")
                 else:
-                    print("❌ DEBUG: User not found in database")
+                    print(" DEBUG: User not found in database")
                     has_access = consultation.get('created_by_user_id') == session['user_id']
             except Exception as user_error:
-                print(f"❌ DEBUG: Error fetching user data: {user_error}")
+                print(f" DEBUG: Error fetching user data: {user_error}")
                 # Fallback to just checking user_id
                 has_access = consultation.get('created_by_user_id') == session['user_id']
         
         if not has_access:
-            print("❌ DEBUG: Access denied to consultation")
+            print(" DEBUG: Access denied to consultation")
             return jsonify({'success': False, 'message': 'You do not have access to this consultation'}), 403
         
-        print("✅ DEBUG: Access granted to consultation details")
+        print(" DEBUG: Access granted to consultation details")
         
         # Convert ObjectId to string
         consultation['id'] = str(consultation['_id'])
@@ -4739,8 +5311,8 @@ def get_consultation_request_details(request_id):
         return jsonify({'success': True, 'consultation': consultation})
         
     except Exception as e:
-        print(f"❌ ERROR getting consultation details: {e}")
-        print(f"❌ ERROR type: {type(e).__name__}")
+        print(f" ERROR getting consultation details: {e}")
+        print(f" ERROR type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': 'Failed to load consultation details'}), 500
@@ -4776,26 +5348,26 @@ def create_consultation_request():
     """Create a new consultation request from farmer"""
     try:
         # Check if database is connected and collections are available
-        print(f"🔍 Database check - consultation_requests_collection: {consultation_requests_collection is not None}")
-        print(f"🔍 Database check - MONGODB_AVAILABLE: {MONGODB_AVAILABLE}")
+        print(f" DEBUG: Database check - consultation_requests_collection: {consultation_requests_collection is not None}")
+        print(f" DEBUG: Database check - MONGODB_AVAILABLE: {MONGODB_AVAILABLE}")
         
         if not MONGODB_AVAILABLE or consultation_requests_collection is None:
-            print("❌ Database not available or collection is None")
+            print(" DEBUG: Database not available or collection is None")
             return jsonify({
                 'success': False, 
                 'message': 'Database service is currently unavailable. Please try again later.'
             }), 503
         
         data = request.get_json()
-        print(f"🔍 Received data: {data}")
-        print(f"🔍 Session info: user_id={session.get('user_id')}, consultant_id={session.get('consultant_id')}")
+        print(f" Received data: {data}")
+        print(f" Session info: user_id={session.get('user_id')}, consultant_id={session.get('consultant_id')}")
         
         if not data:
             return jsonify({'success': False, 'message': 'No data provided'}), 400
         
         # Check if user is logged in
         if 'user_id' not in session:
-            print("❌ No user_id in session - user not logged in")
+            print(" No user_id in session - user not logged in")
             return jsonify({'success': False, 'message': 'Please log in to submit consultation requests'}), 401
         
         # Validate required fields
@@ -4808,12 +5380,12 @@ def create_consultation_request():
         selected_consultant_id = data.get('assigned_to')  # Frontend sends 'assigned_to'
         assigned_consultant_name = None
         
-        print(f"🔍 DEBUG: Received assigned_to value: {selected_consultant_id} (type: {type(selected_consultant_id)})")
+        print(f" DEBUG: Received assigned_to value: {selected_consultant_id} (type: {type(selected_consultant_id)})")
         
         # Handle consultant assignment logic
         if selected_consultant_id and selected_consultant_id != "null":
             # Specific consultant selected
-            print(f"🔍 DEBUG: Specific consultant selected: {selected_consultant_id}")
+            print(f" DEBUG: Specific consultant selected: {selected_consultant_id}")
             try:
                 consultant = consultants_collection.find_one({'_id': ObjectId(selected_consultant_id)})
                 if consultant:
@@ -4821,16 +5393,16 @@ def create_consultation_request():
                     request_status = 'Assigned'  # Directly assigned to specific consultant
                     # Store consultant ID as string to match session format
                     selected_consultant_id = str(selected_consultant_id)
-                    print(f"✅ DEBUG: Found consultant: {assigned_consultant_name}, storing ID as: {selected_consultant_id}")
+                    print(f" DEBUG: Found consultant: {assigned_consultant_name}, storing ID as: {selected_consultant_id}")
                 else:
-                    print(f"❌ DEBUG: Consultant not found with ID: {selected_consultant_id}")
+                    print(f" DEBUG: Consultant not found with ID: {selected_consultant_id}")
                     return jsonify({'success': False, 'message': 'Selected consultant not found'}), 400
             except Exception as e:
-                print(f"❌ DEBUG: Error finding selected consultant: {e}")
+                print(f" DEBUG: Error finding selected consultant: {e}")
                 return jsonify({'success': False, 'message': 'Invalid consultant selection'}), 400
         else:
             # Auto-assign case - don't assign to anyone yet, let consultants pick it up
-            print(f"🔍 DEBUG: Auto-assign case - setting to None")
+            print(f" DEBUG: Auto-assign case - setting to None")
             selected_consultant_id = None
             assigned_consultant_name = None
             request_status = 'Pending'  # Available for any consultant to accept
@@ -4858,14 +5430,14 @@ def create_consultation_request():
         }
         
         # Insert into database
-        print(f"📝 DEBUG: Final document before insertion:")
+        print(f" DEBUG: Final document before insertion:")
         print(f"   - farmer_name: {request_doc['farmer_name']}")
         print(f"   - status: {request_doc['status']}")
         print(f"   - assigned_to: {request_doc['assigned_to']}")
         print(f"   - assigned_consultant_name: {request_doc['assigned_consultant_name']}")
         
         result = consultation_requests_collection.insert_one(request_doc)
-        print(f"✅ Consultation request inserted with ID: {result.inserted_id}")
+        print(f" Consultation request inserted with ID: {result.inserted_id}")
         
         return jsonify({
             'success': True,
@@ -4874,9 +5446,9 @@ def create_consultation_request():
         })
         
     except Exception as e:
-        print(f"❌ Error creating consultation request: {e}")
-        print(f"❌ Error type: {type(e).__name__}")
-        print(f"❌ consultation_requests_collection: {consultation_requests_collection}")
+        print(f" Error creating consultation request: {e}")
+        print(f" Error type: {type(e).__name__}")
+        print(f" Error consultation_requests_collection: {consultation_requests_collection}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -5055,11 +5627,11 @@ def get_user_consultation_messages():
                 ]
             }
             
-            print(f"🔍 DEBUG: Farmer query: {query}")
-            print(f"🔍 DEBUG: User info - email: {user.get('email', '')}, phone: {user.get('phone', '')}, name: {user.get('name', '')}")
+            print(f" DEBUG: Farmer query: {query}")
+            print(f" DEBUG: User info - email: {user.get('email', '')}, phone: {user.get('phone', '')}, name: {user.get('name', '')}")
             
             consultation_count = consultation_requests_collection.count_documents(query)
-            print(f"🔍 DEBUG: Found {consultation_count} consultations for farmer")
+            print(f" DEBUG: Found {consultation_count} consultations for farmer")
         else:
             # Consultant view - get consultations assigned to them
             consultant_id = session['consultant_id']
@@ -5098,11 +5670,11 @@ def get_user_consultation_messages():
                 'consultation_id': consultation_id_str
             }).sort('timestamp', 1)
             
-            print(f"🔍 DEBUG: Looking for messages with consultation_id: {consultation_id_str}")
+            print(f" DEBUG: Looking for messages with consultation_id: {consultation_id_str}")
             message_count = messages_collection.count_documents({
                 'consultation_id': consultation_id_str
             })
-            print(f"🔍 DEBUG: Found {message_count} total messages for consultation {consultation_id_str}")
+            print(f" DEBUG: Found {message_count} total messages for consultation {consultation_id_str}")
             
             for message in messages_cursor:
                 message_data = {
@@ -5113,13 +5685,13 @@ def get_user_consultation_messages():
                     'timestamp': message['timestamp'].strftime('%Y-%m-%d %H:%M:%S') if 'timestamp' in message else ''
                 }
                 consultation_data['messages'].append(message_data)
-                print(f"🔍 DEBUG: Added message from {message_data['sender_type']}: {message_data['message'][:50]}...")
+                print(f" DEBUG: Added message from {message_data['sender_type']}: {message_data['message'][:50]}...")
             
             consultations.append(consultation_data)
         
-        print(f"🔍 DEBUG: Returning {len(consultations)} consultations to farmer")
+        print(f" DEBUG: Returning {len(consultations)} consultations to farmer")
         for i, consult in enumerate(consultations):
-            print(f"🔍 DEBUG: Consultation {i+1}: {consult['farmer_name']} - {len(consult['messages'])} messages")
+            print(f" DEBUG: Consultation {i+1}: {consult['farmer_name']} - {len(consult['messages'])} messages")
         
         return jsonify({
             'success': True,

@@ -1,4 +1,4 @@
-# PashuAarogyam - Smart Animal Disease Prediction
+# PashuArogyam - Smart Animal Disease Prediction
 
 A Flask web application that provides AI-powered animal disease prediction and veterinary guidance.
 
@@ -166,7 +166,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-For support, please contact support@pashuaarogyam.com or create an issue in the repository.
+For support, please contact support@PashuArogyam.com or create an issue in the repository.
 
 ## Disclaimer
 

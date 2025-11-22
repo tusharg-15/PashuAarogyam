@@ -10,7 +10,7 @@ import json
 def demo_specific_prediction():
     """Demonstrate the specific disease prediction feature"""
     
-    print("🎯 PashuAarogyam - Specific Disease Prediction Demo")
+    print("🎯 PashuArogyam - Specific Disease Prediction Demo")
     print("=" * 50)
     
     # Demo data for testing
@@ -177,7 +177,7 @@ def test_api_structure():
 
 
 if __name__ == "__main__":
-    print("🐾 Welcome to PashuAarogyam Specific Disease Prediction Demo!")
+    print("🐾 Welcome to PashuArogyam Specific Disease Prediction Demo!")
     print("\nThis demo will test the new specific disease prediction feature.")
     print("Make sure your Flask app is running before proceeding.")
     
@@ -195,4 +195,4 @@ if __name__ == "__main__":
         test_api_structure()
         demo_specific_prediction()
     
-    print("\n🎉 Thank you for testing PashuAarogyam!")
+    print("\n🎉 Thank you for testing PashuArogyam!")
