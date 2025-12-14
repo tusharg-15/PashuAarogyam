@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sheep Disease Detection - PashuArogyam</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/disease-detection.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">PashuArogyam</div>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('disease_detection') }}">Disease Detection</a></li>
+                <li><a href="{{ url_for('dashboard') }}#contact">Contact</a></li>
+            </ul>
+            <div class="user-menu">
+                <div class="user-info" onclick="toggleUserDropdown()">
+                    <div class="user-avatar">{{ session['user_name'][0].upper() if session['user_name'] else 'U' }}</div>
+                    <span class="user-name">{{ session['user_name'].title() if session['user_name'] else 'User' }}</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href="#" class="dropdown-item">👤 Profile</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item">🚪 Logout</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Detection Page -->
+    <section class="detection-page">
+        <div class="container">
+            <div class="detection-container">
+                <!-- Animal Header -->
+                <div class="animal-header">
+                    <div class="animal-icon">🐑</div>
+                    <h2>Sheep Disease Detection</h2>
+                    <p>AI-powered detection using YOLOv8 model trained for ovine health conditions</p>
+                </div>
+
+                <!-- Disease Classes Info -->
+                <div class="disease-classes">
+                    <h4>Detectable Conditions:</h4>
+                    <div class="disease-list">
+                        <span class="disease-tag healthy">Healthy</span>
+                        <span class="disease-tag disease">Sheep Scab</span>
+                        <span class="disease-tag disease">Ovine Johnes</span>
+                        <span class="disease-tag disease">Flystrike</span>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="upload-section">
+                    <h3>Upload Sheep Image for Analysis</h3>
+                    
+                    <div class="file-drop-zone" id="dropZone">
+                        <div class="upload-icon">📷</div>
+                        <h4>Drop your image here or click to browse</h4>
+                        <p>Supported formats: JPG, PNG, WebP (Max 10MB)</p>
+                        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    </div>
+
+                    <!-- Image Preview -->
+                    <div class="image-preview" id="imagePreview">
+                        <img id="previewImg" class="preview-image" alt="Preview">
+                        <div style="margin-top: 1rem;">
+                            <button class="btn btn-secondary" onclick="resetSelection()">Choose Different Image</button>
+                        </div>
+                    </div>
+
+                    <!-- Analyze Button -->
+                    <button class="btn btn-analyze" onclick="analyzeImage()" id="analyzeBtn" disabled>
+                        🔬 Analyze for Diseases
+                    </button>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <p>Analyzing image with AI model...</p>
+                </div>
+
+                <!-- Results Section -->
+                <div class="results-section" id="resultsSection">
+                    <div class="result-header">
+                        <h3>🔬 Detection Results</h3>
+                        <div id="resultSummary"></div>
+                    </div>
+                    
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confidenceBar"></div>
+                    </div>
+                    <div class="confidence-text" id="confidenceText"></div>
+                    
+                    <div class="result-details" id="resultDetails"></div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="back-button-container">
+                    <a href="{{ url_for('disease_detection') }}" class="btn btn-secondary">← Back to Animal Selection</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Error Popup Modal -->
+    <div class="error-popup-overlay" id="errorPopupOverlay">
+        <div class="error-popup">
+            <div class="error-popup-header">
+                <h3 id="errorPopupTitle">⚠️ Detection Error</h3>
+                <button class="popup-close-btn" onclick="closeErrorPopup()">&times;</button>
+            </div>
+            <div class="error-popup-body">
+                <div class="error-icon">
+                    <div id="errorIcon">🚫</div>
+                </div>
+                <div class="error-message">
+                    <p id="errorMessage">Error message will appear here</p>
+                    <div class="error-details">
+                        <p id="errorDetails">Detailed error information</p>
+                        <br>
+                        <p><strong>Suggestions:</strong></p>
+                        <ul id="errorSuggestions">
+                            <li>Ensure the image contains a clear view of a sheep</li>
+                            <li>Make sure the image is well-lit and in focus</li>
+                            <li>Try uploading a different image</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="error-popup-actions">
+                <button class="btn btn-primary" onclick="closeErrorPopup()">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentImageFile = null;
+        let isAnalyzing = false;
+
+        // File upload setup
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const dropZone = document.getElementById('dropZone');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+        });
+
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size too large. Please select an image under 10MB.');
+                return;
+            }
+
+            currentImageFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('dropZone').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+                resetResults();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetSelection() {
+            currentImageFile = null;
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('dropZone').style.display = 'block';
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('fileInput').value = '';
+            resetResults();
+        }
+
+        function resetResults() {
+            document.getElementById('resultsSection').classList.remove('show');
+            document.getElementById('loadingSpinner').classList.remove('show');
+        }
+
+        async function analyzeImage() {
+            if (!currentImageFile) {
+                alert('Please select an image first.');
+                return;
+            }
+
+            if (isAnalyzing) return;
+            isAnalyzing = true;
+
+            // Show loading spinner
+            document.getElementById('loadingSpinner').classList.add('show');
+            document.getElementById('resultsSection').classList.remove('show');
+
+            const formData = new FormData();
+            formData.append('image', currentImageFile);
+
+            try {
+                const response = await fetch('/predict/sheep', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').classList.remove('show');
+
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    if (result.show_popup || result.validation_failed) {
+                        showErrorPopup(result);
+                    } else {
+                        alert('Error analyzing image: ' + result.error);
+                    }
+                }
+            } catch (error) {
+                document.getElementById('loadingSpinner').classList.remove('show');
+                alert('Error analyzing image: ' + error.message);
+            } finally {
+                isAnalyzing = false;
+            }
+        }
+
+        function displayResults(result) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultSummary = document.getElementById('resultSummary');
+            const confidenceBar = document.getElementById('confidenceBar');
+            const confidenceText = document.getElementById('confidenceText');
+            const resultDetails = document.getElementById('resultDetails');
+
+            // Display main result
+            const mainPrediction = result.predictions[0];
+            let summaryHTML = `
+                <h4>Detected: <span style="color: ${mainPrediction.class === 'Healthy' ? '#28a745' : '#dc3545'}">${mainPrediction.class}</span></h4>
+            `;
+            
+            // Add quality warning if present
+            if (mainPrediction.quality_warning) {
+                summaryHTML += `
+                    <div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 4px solid #ffc107;">
+                        <small><strong>⚠️ Note:</strong> Image quality is moderate. For more accurate results, consider uploading a clearer image.</small>
+                    </div>
+                `;
+            }
+            
+            resultSummary.innerHTML = summaryHTML;
+
+            // Update confidence bar
+            const confidence = Math.round(mainPrediction.confidence * 100);
+            confidenceBar.style.width = confidence + '%';
+            confidenceText.textContent = confidence + '% Confidence';
+
+            // Display all predictions
+            let detailsHTML = '<h4>All Detections:</h4>';
+            result.predictions.forEach((pred, index) => {
+                const confidence = Math.round(pred.confidence * 100);
+                detailsHTML += `
+                    <div class="result-item">
+                        <span>${pred.class}</span>
+                        <span>${confidence}%</span>
+                    </div>
+                `;
+            });
+
+            // Add treatment section if available
+            if (result.treatment) {
+                detailsHTML += `
+                    <div class="treatment-section">
+                        <div class="treatment-header">
+                            <h3>🏥 Treatment Recommendations</h3>
+                        </div>
+                        
+                        <div class="treatment-description">
+                            <h4>Condition Overview</h4>
+                            <p>${result.treatment.description}</p>
+                            <br>
+                            <h4>Treatment Approach</h4>
+                            <p>${result.treatment.treatment}</p>
+                        </div>
+                        
+                        <h4 style="color: #2E8B57; margin-bottom: 1rem;">💊 Recommended Medicines</h4>
+                        <div class="medicines-grid">
+                `;
+
+                // Add medicine cards
+                result.treatment.medicines.forEach(medicine => {
+                    detailsHTML += `
+                        <div class="medicine-card">
+                            <img src="${medicine.image}" alt="${medicine.name}" class="medicine-image" 
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="display:none; height:150px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
+                                        border-radius: 8px; align-items: center; justify-content: center; 
+                                        color: #6c757d; font-size: 2rem; margin-bottom: 1rem;">💊</div>
+                            <div class="medicine-info">
+                                <h5>${medicine.name}</h5>
+                                <span class="medicine-type">${medicine.type}</span>
+                                <p class="medicine-dosage"><strong>Dosage:</strong> ${medicine.dosage}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                detailsHTML += `
+                        </div>
+                        
+                        <div class="treatment-notice">
+                            <h4>⚠️ VETERINARY CONSULTATION REQUIRED</h4>
+                            <p><strong>DISCLAIMER:</strong> These are AI-generated treatment suggestions based on the detected condition. 
+                               <strong>DO NOT</strong> administer any medication without first consulting a licensed veterinarian. 
+                               Proper diagnosis, dosage calculation, and treatment monitoring require professional veterinary expertise. 
+                               Dosages may vary significantly based on your sheep's weight, age, health condition, and other medications.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultDetails.innerHTML = detailsHTML;
+            resultsSection.classList.add('show');
+
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Error popup functions
+        function showErrorPopup(result) {
+            const overlay = document.getElementById('errorPopupOverlay');
+            const title = document.getElementById('errorPopupTitle');
+            const icon = document.getElementById('errorIcon');
+            const message = document.getElementById('errorMessage');
+            const details = document.getElementById('errorDetails');
+
+            title.textContent = result.error || 'Detection Error';
+            
+            if (result.validation_failed) {
+                icon.textContent = result.animal_expected === 'sheep' ? '🐑' : '🚫';
+                message.textContent = result.detailed_message || result.error;
+                details.textContent = `Expected: ${result.animal_expected} | Confidence: ${Math.round((result.confidence || 0) * 100)}%`;
+            } else {
+                icon.textContent = '❌';
+                message.textContent = result.error;
+                details.textContent = result.detailed_message || 'Please try again with a different image.';
+            }
+
+            overlay.classList.add('show');
+        }
+
+        function closeErrorPopup() {
+            document.getElementById('errorPopupOverlay').classList.remove('show');
+        }
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userDropdown = document.getElementById('userDropdown');
+            const userInfo = document.querySelector('.user-info');
+            
+            if (!userInfo.contains(event.target)) {
+                userDropdown.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

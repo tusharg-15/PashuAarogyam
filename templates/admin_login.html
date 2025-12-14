@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - PashuAarogyam</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="logo">
+                    <span class="logo-icon">🛡️</span>
+                    <h1>Admin Portal</h1>
+                </div>
+                <p>Administrative access to PashuAarogyam</p>
+            </div>
+            
+            <form id="adminLoginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Admin Username</label>
+                    <input type="text" id="username" name="username" required>
+                    <div class="form-error" id="username-error"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-input">
+                        <input type="password" id="password" name="password" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            <span id="password-toggle-icon">👁️</span>
+                        </button>
+                    </div>
+                    <div class="form-error" id="password-error"></div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="remember" name="remember">
+                            <span class="checkmark"></span>
+                            Remember me
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="auth-button admin-button" id="loginButton">
+                    <span class="button-text">Admin Sign In</span>
+                    <div class="button-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
+                </button>
+                
+                <div class="auth-footer">
+                    <p><a href="{{ url_for('index') }}">← Back to Main Site</a></p>
+                </div>
+            </form>
+            
+            <div class="alert" id="alertMessage" style="display: none;"></div>
+        </div>
+        
+        <div class="auth-background admin-background">
+            <div class="background-pattern"></div>
+            <div class="background-content">
+                <h2>System Administration</h2>
+                <p>Manage the PashuAarogyam platform with comprehensive administrative tools and analytics.</p>
+                <div class="feature-highlights">
+                    <div class="feature-item">
+                        <span class="feature-icon">📊</span>
+                        <span>System Analytics</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">👥</span>
+                        <span>User Management</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔧</span>
+                        <span>Platform Control</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📈</span>
+                        <span>Performance Reports</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = document.getElementById(fieldId + '-toggle-icon');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.textContent = '🙈';
+            } else {
+                field.type = 'password';
+                icon.textContent = '👁️';
+            }
+        }
+
+        document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const button = document.getElementById('loginButton');
+            const buttonText = button.querySelector('.button-text');
+            const spinner = button.querySelector('.button-spinner');
+            const alertDiv = document.getElementById('alertMessage');
+            
+            // Clear previous errors
+            document.querySelectorAll('.form-error').forEach(error => {
+                error.textContent = '';
+                error.style.display = 'none';
+            });
+            alertDiv.style.display = 'none';
+            
+            // Show loading state
+            button.disabled = true;
+            buttonText.style.display = 'none';
+            spinner.style.display = 'flex';
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message
+                    alertDiv.className = 'alert alert-success';
+                    alertDiv.textContent = 'Login successful! Redirecting...';
+                    alertDiv.style.display = 'block';
+                    
+                    // Redirect after a brief delay
+                    setTimeout(() => {
+                        window.location.href = result.redirect || '/admin_dashboard';
+                    }, 1000);
+                } else {
+                    // Show error message
+                    alertDiv.className = 'alert alert-error';
+                    alertDiv.textContent = result.message || 'Login failed. Please try again.';
+                    alertDiv.style.display = 'block';
+                    
+                    // Show specific field errors if available
+                    if (result.errors) {
+                        Object.keys(result.errors).forEach(field => {
+                            const errorDiv = document.getElementById(field + '-error');
+                            if (errorDiv) {
+                                errorDiv.textContent = result.errors[field];
+                                errorDiv.style.display = 'block';
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                alertDiv.className = 'alert alert-error';
+                alertDiv.textContent = 'Network error. Please check your connection and try again.';
+                alertDiv.style.display = 'block';
+                console.error('Login error:', error);
+            } finally {
+                // Reset button state
+                button.disabled = false;
+                buttonText.style.display = 'inline';
+                spinner.style.display = 'none';
+            }
+        });
+
+        // Auto-hide alerts after 5 seconds
+        function showAlert(message, type = 'error') {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+
+    <style>
+        /* Admin-specific styling */
+        .admin-button {
+            background: linear-gradient(135deg, #1565C0, #1976D2, #42A5F5);
+            border: none;
+            color: white;
+        }
+
+        .admin-button:hover {
+            background: linear-gradient(135deg, #0D47A1, #1565C0, #1976D2);
+            transform: translateY(-2px);
+        }
+
+        .admin-background {
+            background: linear-gradient(135deg, #1565C0 0%, #1976D2 25%, #42A5F5 50%, #64B5F6 75%, #90CAF9 100%);
+        }
+
+        .admin-background .background-content h2 {
+            color: white;
+        }
+
+        .admin-background .background-content p {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            margin-right: 0.5rem;
+        }
+
+        .feature-highlights {
+            margin-top: 2rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .feature-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+            
+            .auth-background {
+                display: none;
+            }
+            
+            .auth-card {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</body>
+</html>
+
+<!-- Google Translate widget (languages: English, Hindi, Marathi) -->
+<div id="google_translate_element"></div>
+<script src="{{ url_for('static', filename='js/translate.js') }}"></script>
+       
